@@ -1,0 +1,226 @@
+Pseudocode for client of simplifier program
+
+ITEM INTERFACE
++getLocalId():String
++getDataEtc():Object
++setDataEtc(dataEtc:Object):Boolean
++checkSubscriberId(subscriberId:String):Booleanish Number
++checkPublisherId(publisherId:String):Booleanish Number
++addSubscriberId(subscriberId:String, priority:Number):Boolean
++removeSubscriberId(subscriberId:String):Boolean
++addPublisherId(publisherId:String):Boolean
++removePublisherId(publisherId:String):Boolean
++update(publisherId:String):Boolean
++getUpdateFunction():Function
++setUpdateFunction(update:Function):Boolean
+ITEM MANAGER INTERFACE
++createItem(core:Object):Item
++deleteItem(item:Item):Boolean
++getItem(localId):Item
++setItem(item:Item):Boolean
+ITEM CORE INTERFACE
+localId:String
+DataEtc:Object
+DataEtc.data
+DataEtc.dataType:String
+SubscriberIds:Array<String>
+PublisherIds:Array<String>
+Update:Function(publisherId:String):Boolean
+ACCEPTED DATE: 6 MARCH 2013
+
+
+//+createItem(core:Object):Item
+//check given core for localId
+  //if core.localId, 
+    //check that it is valid
+      //if not string, to string
+      //if > 64, chop it off there
+    //check if localId is used
+      //if used, modify, saving originalLocalId in dataEtc.
+        //chop make max 62 to allow for underscore and number
+        //add underscore and increasing numbers until unused id is found
+        //every time mod10 is 0, chop off a letter from the 64 max?
+  //if no core.localId, check for dataEtc.data
+    //if none, not a true core
+      //convert to string
+      //if no string, create date+time string
+      //create core
+      //put string in dataEtc.data
+  //use dataEtc.data to create localId
+    //accept first 15 letters (enough for date string)
+    //then, if space, see if used
+      //if not, add more letters (not ending with space until unused id is found
+        //if up to 33(enough for time string), add underscore and number
+//+getLocalId():String
+//+getDataEtc():Object
+//+setDataEtc(dataEtc:Object):Boolean
+//send this to the update functions of subscribers
+  //if subscriber does not exist, console.log warning
+  //if unchecked publishers still do not exist, console.log warning
+  //if unchecked publishers now exist but do not have this listed as subscriber, console.log warning and subscribe
+  //delete unchecked publishers list
+//create private subscribers and publishers arrays and also indices for easy lookup?
+//check for subscribers
+  //if subscribers, check that typeof each === string
+    //if not, throw exception
+//check for publishers
+  //if subscribers, check that typeof each === string
+    //if not, throw exception
+  //check if publishers have this listed as subscriber
+    //if not, console.log warning and subscribe
+    //if publishers do not exist, keep a list of unchecked publishers
+//+checkSubscriber(subscriberId:String):Boolean
+//+checkPublisher(publisherId:String):Boolean
+//+addSubscriberId(subscriberId:String, priority:Number):Boolean
+  //no immediate update because may cause unwanted behavior, and they just looked at us
+  //somewhere publisher needs to be added--here or elsewhere?
+//+removeSubscriberId(subscriberId:String):Boolean
+  //somewhere publisher needs to be removed--here or elsewhere?
+//+addPublisherId(publisherId:String):Boolean
+//+removePublisherId(publisherId:String):Boolean
+//inner update function should be in core
+//check if it's already there
+  //if so, ensure typeof === function or some such check, otherwise throw exception
+//+update(publisher:Item):Boolean (this is where others update this; for this updating others, see setDataEtc.)
+//outer update function
+  //if this did not already have publisher listed, 
+    //console.log warning
+    //add publisher
+  //if unchecked publishers still do not exist, console.log warning
+  //if unchecked publishers now exist but do not have this listed as subscriber, console.log warning and subscribe
+  //delete unchecked publishers list
+  //run supplied core update function
+//+getUpdateFunction():Function
+//+setUpdateFunction(update:Function):Boolean
+  //ensure typeof === function or some such check, otherwise return boolean
+//+deleteItem(item:Item):Boolean
+  //I think setting value to null will be sufficient
+//+getItem(localId):Item (
+  //no false needed in interface def, as long as it returns something falsey
+//+setItem(item:Item):Boolean
+  //if no item.getId, throw exception
+
+  Vertex interface
++getId():String
++setId(id:String)
++getDataEtc():Object
++setDataEtc(dataEtc:Object)
++getSubscribers():Array
++getPublishers():Array
++createVertex(core:Object):Vertex
++addSubscriber(vertex:Vertex, priority:Number)
++removeSubscriber(vertex:Vertex)
++update(publisher:Vertex)
++beDeleted()
+ACCEPTED DATE: 5 MARCH 2013
+
+BELOW THIS IS OLD, MUCH MAY BE DELETED
+  
+  
+do Vertex constructor
+check core, possibly supply defaults
+core should be something like...
+{
+  id: 'Step_1_Import_Text", 
+  dataEtc :
+  {
+    dataType: 'text',
+    data: 'Step 1: Import Text',
+    created: '5 Mar 2013',
+    upPoints: '1',
+    downPoints: '0'
+  }
+  subscribers: 
+  [
+    idX,
+    idY,
+    idZ
+  ]
+  publishers: 
+  [
+    idV,
+    idW,
+    idX
+  ]
+  //update: ?
+}
+
+//Req. 4.2: Steps on every virtual page
+//Create Steps tool model (at first with title and orientation), 
+//Create Steps tool views (one for invisible tool container, one for title to be used if title data exists)
+//Create Steps tool presenter
+
+
+
+//Connect them via subscription
+//Changing model data to active to display (with first but finally without title)
+//Try separating presenter from its functions, for reuse
+//Create Step1 model
+//Create Step1 view, if not reusing
+//Create Step1 presenter, try to reuse functions
+//Connect them together to display
+//Create Step2 model
+//Create Step2 view, if not reusing
+//Create Step2 presenter, try to reuse functions
+//Connect them together to display (and ensure switching steps changes state via console.log)
+//Create Step3 model
+//Create Step3 view, if not reusing
+//Create Step3 presenter, try to reuse functions
+//Connect them together to display
+//Create 1.1 Import Method tool model
+//Create 1.1 Import Method view, if not reusing
+//Create 1.1 Import Method presenter, try to reuse functions
+//Connect them together to display
+//Create textarea button model
+//Create textarea button view
+//Create textarea button presenter
+//Connect it with tool/title and Step1 to display (and ensure clicking other steps makes 1.1 disappear)
+//If time, try dev mode 0.1 by looping through allVertices and displaying a crud interface
+//Then move on to completing importer, analyzer (chunking), checker(comparison with simplicity standard), rechecker (manual), exporter
+
+
+
+
+
+Req 1.1
+Create Item 1.1 Importing Method
+
+
+Create Item 1.2 The text to simplify
+
+
+Create Item 2.1 Vocab Goal
+
+
+Create Item 2.2 Result Type"
+
+ 2.2.1 The list shall have dividers labeled "Unchecked" and "Checked" or the equivalent. Priority: 1
+ 2.2.1.1 Under "Unchecked", there shall be two items labeled "Low-Risk" and "High-Risk" or the equivalent. "Low-Risk" means results of data that fit into the expectations of the system. "High-Risk" means that something results of data that the system was not fully prepared for. Low-Risk is listed first to give the user a good impression of the results before focusing on the possibly embarrassing "High-Risk" results. Priority: 1
+ 2.2.1.2 Under "Checked", there shall be two items labeled "Successes" and "Exceptions"
+
+
+Create Item 2.3 Hard Word
+
+
+Create Item 2.4 Sentence
+
+
+Create Item 2.5 Old Context
+
+
+Create Item 2.6
+
+
+Create Item 2.7
+
+
+Create Item 2.8
+
+
+Create Item 3.1
+
+
+Create Item 3.2
+
+
+Create Item 1.1

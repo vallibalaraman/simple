@@ -1,0 +1,14 @@
+Known Bugs:
+itemManager.createItem(' ') or itemManager.createItem({dataEtc: {data: ' '}}) etc. will create ids that consist only of spaces
+itemManager.createItem is programmed to give up looking for unique id after about 10 trillion attempts. Is this too many or too few?
+itemManager.createItem is programmed to limit localIds to 64 chars. Is this too many or too few?
+itemManager does not deal with foreignIds (i.e. server ids). Can this be taken care of in dataEtc?
+when item.setDataEtc() is passed an array, it accepts it, but maybe this is okay?
+items have subscribers and publishers ids each stored twice, once in array and once in object to use hash instead of search. Will size matter?
+The following test produces an unexpected id, which is 'faith_9_10'
+  describe("when item.addPublisherId is called with an invalid id", function () {
+    it("ensures item returns false", function() {
+      var item = itemManager.createItem({localId: 'faith', publisherIds: ['hope', 'love']});
+      var result = item.addPublisherId([]);
+It doesn't seem secure: getItem and getItems?
+Need a way to export core?
