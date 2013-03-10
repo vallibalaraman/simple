@@ -12,3 +12,8 @@ The following test produces an unexpected id, which is 'faith_9_10'
       var result = item.addPublisherId([]);
 It doesn't seem secure: getItem and getItems?
 Need a way to export core?
+Right now it does console.log when an id is requested but denied because already used or >64chars. Only user will see that if user opens browser console.
+  Better to have a log, perhaps item(s) that both user and server/webmaster can have access to?
+It's confusing right now that some items seem to be by nature titles. 
+  Better to have that be portrayed as it is: part of the presentation status, of which model should be ignorant.
+  If we are using its text for a title, call it data or something in model, and call it title in presenter.

@@ -315,6 +315,7 @@ window.base = base = (function createBase() {
     
     //send this id to the updateFrom functions of subscribers
     function publish() {
+      console.log("something updated *" + core.localId + "*");
       var sub;
       for (var i in core.subscriberIds) {
         sub = core.subscriberIds[i];
@@ -556,7 +557,7 @@ window.base = base = (function createBase() {
         addPublisher(pub);
       }
       //run supplied core updateFrom function
-      console.log("*" + core.localId + "* got update from *" + pub + "*");
+      console.log("*" + pub + "* updated *" + core.localId + "*");
       core.updateFrom.call(items[core.localId], pub);
     }
   

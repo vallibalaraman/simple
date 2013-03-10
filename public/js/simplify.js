@@ -2,9 +2,9 @@
 
 window.simplifier = simplifier = (function createSimplifier() {
   "use strict";
+  
   function go() {
     createItems();
-    
     //act as presenter: pass message and cause model to update its presenter
     base.getItem("Easy model").setSomeDataEtc({domElement: "#page"});
   }
@@ -16,9 +16,9 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Easy model",
       dataEtc: {
         data: {
-          title: "My Title"
+          text: "My Text"
         }
-        //domElement will be inserted here as a temporary message from inputPresenter/inputController to be picked up by outputPresenterProperties
+        //domElement and/or distanceFromFocus will be inserted here by go() initializer as a temporary message for presenter
       },
     });
     
@@ -28,19 +28,19 @@ window.simplifier = simplifier = (function createSimplifier() {
       dataEtc: {
         dataType: "html",
         requirements: ["doT.js"],
-        data: '<a href="#"><h1>{{=it.title}}</h1></a>'
+        data: '<a href="#"><h1>{{=it.text}}</h1></a>'
       }
     });
     
     //the presenter utility
     base.createItem({
-      localId: "Easy presenter function",
+      localId: "Easy presenter utility",
       dataEtc: {
         dataType: "function",
         requirements: ["jQuery", "jQueryMobile", "doT.js"]
       },//end of dataEtc
       updateFrom: function(publisherId) {
-        //get presenter properties from publisher
+        //get presenter from publisher
         var props = base.getItem(publisherId).getDataEtc();
         //get html template from view
         var templateString = base.getItem(props.viewId).getDataEtc().data;
@@ -54,7 +54,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     
     //the presenter that binds it all together
     base.createItem({
-      localId: "Easy presenter properties",
+      localId: "Easy presenter",
       dataEtc: {
         viewId: "Easy view"
         //data will be inserted here
@@ -65,7 +65,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         "Easy model"
       ],
       subscriberIds: [
-        "Easy presenter function"
+        "Easy presenter utility"
       ], //TODO make the following default updateFrom method? or a common option to be called on?
       updateFrom: function(publisherId) {
         var pub = base.getItem(publisherId);
@@ -73,7 +73,7 @@ window.simplifier = simplifier = (function createSimplifier() {
           //this is not related to presentation
           return;
         }
-        //console.log("model updated presenter properties, which is setting its own data accordingly");
+        //console.log("model updated presenter, which is setting its own data accordingly");
         
         //set data and publish, allowing presentation function to display view
         this.setSomeDataEtc(pub.getDataEtc());
@@ -95,7 +95,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Easy model",
       dataEtc: {
         data: {
-          title: "My Title"
+          text: "My Text"
         }
         //domElement will be inserted here as a temporary message from inputPresenter/inputController to be picked up by outputPresenterProperties
       },
@@ -107,19 +107,19 @@ window.simplifier = simplifier = (function createSimplifier() {
       dataEtc: {
         dataType: "html",
         requirements: ["doT.js"],
-        data: '<a href="#"><h1>{{=it.title}}</h1></a>'
+        data: '<a href="#"><h1>{{=it.text}}</h1></a>'
       }
     });
     
     //the adapter
     base.createItem({
-      localId: "Easy presenter function",
+      localId: "Easy presenter utility",
       dataEtc: {
         dataType: "function",
         requirements: ["jQuery", "jQueryMobile", "doT.js"]
       },//end of dataEtc
       updateFrom: function(publisherId) {
-        //get presenter properties from publisher
+        //get presenter from publisher
         var props = base.getItem(publisherId).getDataEtc();
         //get html template from view
         var templateString = base.getItem(props.viewId).getDataEtc().data;
@@ -133,7 +133,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     
     //the presenter that binds it all together
     base.createItem({
-      localId: "Easy presenter properties",
+      localId: "Easy presenter",
       dataEtc: {
         viewId: "Easy view"
         //data will be inserted here
@@ -144,7 +144,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         "Easy model"
       ],
       subscriberIds: [
-        "Easy presenter function"
+        "Easy presenter utility"
       ], //TODO make the following default updateFrom method? or a common option to be called on?
       updateFrom: function(publisherId) {
         var pub = base.getItem(publisherId);
@@ -152,7 +152,7 @@ window.simplifier = simplifier = (function createSimplifier() {
           //this is not related to presentation
           return;
         }
-        //console.log("model updated presenter properties, which is setting its own data accordingly");
+        //console.log("model updated presenter, which is setting its own data accordingly");
         
         //set data and publish, allowing presentation function to display view
         this.setSomeDataEtc(pub.getDataEtc());
@@ -185,23 +185,23 @@ window.simplifier = simplifier = (function createSimplifier() {
   });
   //Create Steps tool presenter
   base.createItem({
-    localId: "Options presenter function",
+    localId: "Options presenter utility",
     data: ""
   });
   //Connect them via subscription
   base.createItem({
-    localId: "Steps tool presenter properties",
+    localId: "Steps tool presenter",
     dataType: "properties",
     data: {
       model: "Steps tool",
       view: "Form outer view",
-      presenterFunction: "Options presenter function",
+      presenterFunction: "Options presenter utility",
       orientation: "horizontal"
     },
     subscriberIds: [
       "Steps tool",
       "Form outer view",
-      "Options presenter function"
+      "Options presenter utility"
     ]
   });
   */
