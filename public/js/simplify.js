@@ -6,12 +6,314 @@ window.simplifier = simplifier = (function createSimplifier() {
   function go() {
     createItems();
     //act as presenter: pass message and cause model to update its presenter
-    base.getItem("Easy model").setSomeDataEtc({distanceFromFocus: 1});
+    base.getItem("Steps tool model").setSomeDataEtc({distanceFromFocus: 0});
   }
-  //TODO: I've copied this into commented section below, so go ahead and modify this for the real thing
-  
+
+
   function createItems() {
-    //the model
+    //Req. 4.2: Steps on every virtual page
+    //Create Steps tool model (at first with title and orientation), 
+    base.createItem({
+      localId: "Steps tool model",
+      dataEtc: {
+        data: {},
+        selectedItem: 1,
+        distanceFromFocus: 1
+      },
+    });
+    
+    //the view markup
+    base.createItem({
+      localId: "List view markup",
+      dataEtc: {
+        dataType: "html",
+        requirements: ["doT.js"],
+        data: '<form style="text-align: center; margin: 5px 5px 5px 5px; vertical-align: top;"> <fieldset data-role="controlgroup" data-type="{{=it.orientation}}" data-iconpos="right" {{=it.newAttribute}} id="{{=it.elementId}}"></fieldset></form>'
+      }
+    });
+    
+    //the view
+    base.createItem({
+      localId: "View utility",
+      dataEtc: {
+        dataType: "function",
+        requirements: ["jQuery", "jQueryMobile", "doT.js"]
+      },//end of dataEtc
+      updateFrom: function updateFrom(publisher) {
+        var presenter = publisher;
+        //get view markup here as set by presenter
+        var here = this.getDataEtc().data;
+        var viewMarkup = base.getItem(here.viewMarkupId);
+        //get html template from view markup
+        var templateString = viewMarkup.getDataEtc().data;
+        //use it to initialize a templating function
+        var template = doT.template(templateString);
+        //insert model data into viewMarkup template and display
+        console.log('parentId: ' + here.parentId + ', data: ' + template(here))
+        $('#' + here.parentId).append(template(here));
+        $('#page').trigger('create');
+        var elId = "#" + here.elementId;
+        var iconString = 'arrow-d';
+        var themeChar = 'b'
+        if (here.isSelected === false) {
+          iconString = null;
+          themeChar = 'c';
+        }
+        console.log('elId: ' + elId + ', iconString: ' + iconString + ", themeChar: " + themeChar)
+        if (elId.indexOf('_') !== -1) {
+          $(elId).buttonMarkup({theme: themeChar, corners: false, icon: iconString, shadow: false});
+        }
+        //record the highest position associated with this list, for use in on click below
+        var permanent = this.getDataEtc();
+        if (!permanent[here.parentId] || permanent[here.parentId] < here.position) {
+          permanent[here.parentId] = here.position;
+          this.setDataEtc(permanent, this.getLocalId());
+        }
+        var self = this;
+        //prepare to collect user events and pass them to presenter
+        if (here.parentId == 'page') return;
+        $('#page').on("click", 'input', function() {
+          var selectedId = this.id;
+          var idArray = selectedId.split('_');
+          var selectedInt = idArray[1];
+          var idStarter = "#" + idArray[0];
+          var unselected = [];
+          permanent = self.getDataEtc();
+          for (var i = 1; i <= permanent[idArray[0]]; i++) {
+            if (i != selectedInt) {
+              unselected.push(i);
+            }
+          }
+          for (var i in unselected) {
+            $(idStarter + '_' + unselected[i]).buttonMarkup({theme: 'c', corners: false, icon: null});
+          }
+          $('#' + selectedId).buttonMarkup({theme: 'b', corners: false, icon: 'arrow-d'});
+          //if clicked, update presenter, which will allow it to update model
+          var presenter = base.getItem(idArray[0] + ' ' + selectedInt + " presenter");
+          presenter.setSomeDataEtc({isSelected: true}, self.getLocalId());
+          presenter.getUpdateFromFunction().call(presenter, self);
+        });
+      }//end of updateFrom
+    });
+    
+    base.createItem({
+      localId: "Steps tool presenter",
+      dataEtc: {
+        elementId: "Step", 
+        orientation: "horizontal", 
+        newAttribute: "style=' background: white; border: 0;'", //style='display: block;'
+        modelId: "Steps tool model",
+        viewId: "View utility",
+        viewMarkupId: "List view markup",
+        parentId: "page",
+        selectedItem: 1
+      },
+      publisherIds: [
+        "Steps tool model"
+      ],
+      updateFrom: function(publisher) {
+        var pInfo = publisher.getDataEtc();
+        var here = this.getDataEtc();
+        //check if it's model
+        if ("distanceFromFocus" in pInfo) {
+          //this should be model; check distanceFromFocus
+          if (pInfo.distanceFromFocus === 0) {
+            //set data and publish, allowing presentation function to display view
+            var view = base.getItem(this.getDataEtc().viewId);
+            view.setSomeDataEtc({data: here, viewMarkupId: here.viewMarkupId, parentId: here.parentId}, this.getLocalId());
+            view.getUpdateFromFunction().call(view, this);
+          }
+        }//end check if it's model
+        //check if it's view
+        else if (publisher.getLocalId() == here.viewId) {
+          //this should be view after having set here.isSelected
+          if (here.isSelected === true) {
+            var model = base.getItem(here.modelId);
+            model.setSomeDataEtc({distanceFromFocus: 0}, this.getLocalId());
+          }
+        } // end if it's view/html
+      }//end updateFrom
+    });
+  
+    //Create Step1 model
+    base.createItem({
+      localId: "Step 1 model",
+      dataEtc: {
+        text: 'Step 1: Import Text',
+        distanceFromFocus: 1,
+        listModelId: "Steps tool model",
+        position: 1
+      },
+      publisherIds: [
+        "Steps tool model"
+      ],
+      updateFrom: function(publisher) {
+        //publisher is List model
+        var listInfo = publisher.getDataEtc();
+        var thisInfo = this.getDataEtc();
+        if (listInfo.selectedItem === thisInfo.position) {
+          //this is in focus
+          this.setSomeDataEtc({distanceFromFocus: 0}, this.getLocalId());
+        }
+        else {
+          //this is not in focus
+          this.setSomeDataEtc({distanceFromFocus: listInfo.distanceFromFocus + 1}, this.getLocalId());
+        }
+      }
+    });
+   
+  
+    //the item view markup for most items
+    base.createItem({
+      localId: "Item view markup",
+      dataEtc: {
+        dataType: "html",
+        requirements: ["doT.js"],
+        data: '<input type="button" data-iconpos="bottom" data-role="button" data-theme="a" id="{{=it.elementId}}" value="{{=it.text}}" />'
+      }
+    });
+    
+    base.createItem({
+      localId: "Step 1 presenter",
+      dataEtc: {
+        elementId: "Step_1", 
+        modelId: "Step 1 model",
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        parentId: "Step",
+        isSelected: true,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Step 1 model"
+      ],
+      updateFrom: itemPresenterUpdateFrom
+    });//end create presenter
+    
+  function itemPresenterUpdateFrom(publisher) {
+    var pInfo = publisher.getDataEtc();
+    var here = this.getDataEtc();
+    var model = base.getItem(here.modelId);
+    var position = model.getDataEtc().position;
+    var listModel = base.getItem(model.getDataEtc().listModelId);
+    //check if it's model
+    if ("distanceFromFocus" in pInfo) {
+      //this should be model; check distanceFromFocus
+      if (pInfo.distanceFromFocus < 2) {
+        if (here.isDisplayed === false) {
+          //set data and publish, allowing presentation function to display view
+          var view = base.getItem(this.getDataEtc().viewId); console.log('pos: ' + pInfo.position);
+          this.setSomeDataEtc({text: pInfo.text, position: pInfo.position}, this.getLocalId());
+          view.setSomeDataEtc({data: here}, this.getLocalId());
+          view.getUpdateFromFunction().call(view, this);
+          this.setSomeDataEtc({isDisplayed: true});
+        }
+        if (position !== listModel.getDataEtc().selectedItem) {
+          this.setSomeDataEtc({isSelected: false}, this.getLocalId());
+        }
+      }
+    }    
+    //check if it's view
+    else if (publisher.getLocalId() == here.viewId) {
+      //this should be view after having set here.isSelected
+      if (here.isSelected === true) {
+        listModel.setSomeDataEtc({selectedItem: position}, this.getLocalId());
+      }
+    } // end if it's view/html
+  }//end itemUpdateFrom
+    
+    //Create Step2 model
+    base.createItem({
+      localId: "Step 2 model",
+      dataEtc: {
+        text: 'Step 2: Import Text',
+        listModelId: "Steps tool model",
+        distanceFromFocus: 2,
+        position: 2
+      },
+      publisherIds: [
+        "Steps tool model"
+      ],
+      updateFrom: function(publisher) {
+        //publisher is List model
+        var listInfo = publisher.getDataEtc();
+        var thisInfo = this.getDataEtc();
+        if (listInfo.selectedItem === thisInfo.position) {
+          //this is in focus
+          this.setSomeDataEtc({distanceFromFocus: 0}, this.getLocalId());
+        }
+        else {
+          //this is not in focus
+          this.setSomeDataEtc({distanceFromFocus: listInfo.distanceFromFocus + 1}, this.getLocalId());
+        }
+      }
+    });
+    
+    base.createItem({
+      localId: "Step 2 presenter",
+      dataEtc: {
+        elementId: "Step_2", 
+        modelId: "Step 2 model",
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        parentId: "Step",
+        isSelected: false,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Step 2 model"
+      ],
+      updateFrom: itemPresenterUpdateFrom
+    });//end create presenter
+    
+    //Create Step3 model
+    base.createItem({
+      localId: "Step 3 model",
+      dataEtc: {
+        text: 'Step 3: Import Text',
+        distanceFromFocus: 1,
+        listModelId: "Steps tool model",
+        position: 3
+      },
+      publisherIds: [
+        "Steps tool model"
+      ],
+      updateFrom: function(publisher) {
+        //publisher is List model
+        var listInfo = publisher.getDataEtc();
+        var thisInfo = this.getDataEtc();
+        if (listInfo.selectedItem === thisInfo.position) {
+          //this is in focus
+          this.setSomeDataEtc({distanceFromFocus: 0}, this.getLocalId());
+        }
+        else {
+          //this is not in focus
+          this.setSomeDataEtc({distanceFromFocus: listInfo.distanceFromFocus + 1}, this.getLocalId());
+        }
+      }
+    });
+    
+    base.createItem({
+      localId: "Step 3 presenter",
+      dataEtc: {
+        elementId: "Step_3", 
+        modelId: "Step 3 model",
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        parentId: "Step",
+        isSelected: false,
+        isDisplayed: false
+        //then outputPresenterFunction will be notified
+      },
+      publisherIds: [
+        "Step 3 model"
+      ],
+      updateFrom: itemPresenterUpdateFrom
+    });//end create presenter
+    
+  }//end create items
+  /*
+        //the model
     base.createItem({
       localId: "Easy model",
       dataEtc: {
@@ -55,7 +357,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         //prepare to collect user events and pass them to presenter
         $(here.domElement).on("click", "a", function() {
           //if clicked, update presenter, which will allow it to update model
-          presenter.setSomeDataEtc({status: "selected"}, self.getLocalId());
+          presenter.setSomeDataEtc({selected: true}, self.getLocalId());
           presenter.getUpdateFromFunction().call(presenter, self);
         });
       }//end of updateFrom
@@ -103,86 +405,6 @@ window.simplifier = simplifier = (function createSimplifier() {
     });
   }
   
-  /*
-    function createItems() {
-    //the model
-    base.createItem({
-      localId: "Easy model",
-      dataEtc: {
-        data: {
-          text: "My Text"
-        }
-        //domElement and/or distanceFromFocus will be inserted here by go() initializer as a temporary message for presenter
-      },
-    });
-    
-    //the view
-    base.createItem({
-      localId: "Easy view",
-      dataEtc: {
-        dataType: "html",
-        requirements: ["doT.js"],
-        data: '<a href="#"><h1>{{=it.text}}</h1></a>'
-      }
-    });
-    
-    //the presenter utility
-    base.createItem({
-      localId: "Easy presenter utility",
-      dataEtc: {
-        dataType: "function",
-        requirements: ["jQuery", "jQueryMobile", "doT.js"]
-      },//end of dataEtc
-      updateFrom: function(publisherId) {
-        //get presenter from publisher
-        var props = base.getItem(publisherId).getDataEtc();
-        //get html template from view
-        var templateString = base.getItem(props.viewId).getDataEtc().data;
-        //use it to initialize a templating function
-        var template = doT.template(templateString);
-        //insert model data into view template and display
-        $(props.domElement).append(template(props.data));
-        //console.log("properties notified presfunc, which passed the data to view");
-      }//end of data: function
-    });
-    
-    //the presenter that binds it all together
-    base.createItem({
-      localId: "Easy presenter",
-      dataEtc: {
-        viewId: "Easy view"
-        //data will be inserted here
-        //domElement will be inserted here
-        //then outputPresenterFunction will be notified
-      },
-      publisherIds: [
-        "Easy model"
-      ],
-      subscriberIds: [
-        "Easy presenter utility"
-      ], //TODO make the following default updateFrom method? or a common option to be called on?
-      updateFrom: function(publisherId) {
-        var pub = base.getItem(publisherId);
-        if (!pub.getDataEtc().domElement) {
-          //this is not related to presentation
-          return;
-        }
-        //console.log("model updated presenter, which is setting its own data accordingly");
-        
-        //set data and publish, allowing presentation function to display view
-        this.setSomeDataEtc(pub.getDataEtc());
-        //prepare to collect further information from view
-        $(pub.getDataEtc().domElement).on("click", "a", function() {
-          //if clicked, update model, allowing other models/presenters to observe
-          pub.setSomeDataEtc({status: "selected"});
-          //console.log("model knows it is selected, and others can observe");
-        });
-        //remove domElement until next time
-        delete pub.getDataEtc().domElement;
-      }
-    });
-  }
-  
   
   //Req. 4.2: Steps on every virtual page
   //Create Steps tool model (at first with title and orientation), 
@@ -221,8 +443,6 @@ window.simplifier = simplifier = (function createSimplifier() {
   });
   */
   //Changing model data to active to display (with first but finally without title)
-  //Try separating presenter from its functions, for reuse
-  //Create Step1 model
   //Create Step1 view, if not reusing
   //Create Step1 presenter, try to reuse functions
   //Connect them together to display

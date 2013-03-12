@@ -630,7 +630,10 @@ window.base = base = (function createBase() {
   //+getItem(localId):Item (
   //if not there, should return undefined
   function getItem(localId) {
-    var id = localId.toString();
+    var id = '';
+    if (localId !== undefined) {
+      id = localId.toString();
+    }
     return items[id];
   }
   
