@@ -23,44 +23,40 @@ window.simplifier = simplifier = (function createSimplifier() {
       },
     });
     
-    //the view
+    //the view markup
     base.createItem({
-      localId: "Easy view",
+      localId: "Easy view markup",
       dataEtc: {
         dataType: "html",
-        status: "readyToDisplay",
         requirements: ["doT.js"],
         data: '<a href="#"><h1>{{=it.text}}</h1></a>'
       }
     });
     
-    //the presenter utility
+    //the view
     base.createItem({
-      localId: "Easy presenter utility",
+      localId: "Easy view",
       dataEtc: {
         dataType: "function",
         requirements: ["jQuery", "jQueryMobile", "doT.js"]
       },//end of dataEtc
-      updateFrom: function(publisherId) {
-        //get presenter from publisher
-        var presenter = base.getItem(publisherId);
-        var pInfo = presenter.getDataEtc();
-        //check if this update is for display. If not, quit.
-        if (pInfo.status != "readyToDisplay") return;
-        
-        //get view from presenter
-        var view = base.getItem(pInfo.viewId);
-        //get html template from view
-        var templateString = view.getDataEtc().data;
+      updateFrom: function updateFrom(publisher) {
+        var presenter = publisher;
+        //get view markup here as set by presenter
+        var here = this.getDataEtc();
+        var viewMarkup = base.getItem(here.viewMarkupId);
+        //get html template from view markup
+        var templateString = viewMarkup.getDataEtc().data;
         //use it to initialize a templating function
         var template = doT.template(templateString);
-        //insert model data into view template and display
-        $(pInfo.domElement).append(template(pInfo.data));
-        view.setSomeDataEtc({status: "displayed"});
+        //insert model data into viewMarkup template and display
+        $(here.domElement).append(template(here.data));
+        var self = this;
         //prepare to collect user events and pass them to presenter
-        $(pInfo.domElement).on("click", "a", function() {
-          //if clicked, update view, which will allow it to send update to subscribers (i.e. presenter)
-          view.setSomeDataEtc({status: "selected"});
+        $(here.domElement).on("click", "a", function() {
+          //if clicked, update presenter, which will allow it to update model
+          presenter.setSomeDataEtc({status: "selected"}, self.getLocalId());
+          presenter.getUpdateFromFunction().call(presenter, self);
         });
       }//end of updateFrom
     });
@@ -73,42 +69,34 @@ window.simplifier = simplifier = (function createSimplifier() {
         distanceFromFocus: 2,
         modelId: "Easy model",
         viewId: "Easy view",
+        viewMarkupId: "Easy view markup",
         domElement: "#page",
         //data will be inserted here
         //then outputPresenterFunction will be notified
       },
       publisherIds: [
-        "Easy model",
-        "Easy view"
+        "Easy model"
       ],
-      subscriberIds: [
-        "Easy presenter utility"
-      ], 
       //TODO make the following default updateFrom method? or a common option to be called on?
-      updateFrom: function(publisherId) {
-        var pub = base.getItem(publisherId);
-        var pInfo = pub.getDataEtc();
+      updateFrom: function(publisher) {
+        var pInfo = publisher.getDataEtc();
+        var here = this.getDataEtc();
         //check if it's model
         if ("distanceFromFocus" in pInfo) {
           //this should be model; check distanceFromFocus
           if (pInfo.distanceFromFocus === 1) {
             //set data and publish, allowing presentation function to display view
-            this.setSomeDataEtc({data: pInfo.data, distanceFromFocus: 0});
-          }
-          else if (pInfo.distanceFromFocus === 0) {
-            //do nothing, it's notifying this of a change this just made (see code below)
+            var view = base.getItem(this.getDataEtc().viewId);
+            view.setSomeDataEtc({data: pInfo.data, viewMarkupId: here.viewMarkupId, domElement: here.domElement}, this.getLocalId());
+            view.getUpdateFromFunction().call(view, this);
           }
         }//end check if it's model
         //check if it's view
-        else if (pInfo.dataType == "html") {
-          //this should be view
-          if (pInfo.status == "displayed") {
-            this.setSomeDataEtc({status: "displayed"});
-          }
-          else if (pInfo.status == "selected") {
-            var modelId = this.getDataEtc().modelId;
-            var model = base.getItem(modelId);
-            model.setSomeDataEtc({distanceFromFocus: 0});
+        else if (publisher.getLocalId() == here.viewId) {
+          //this should be view after having set here.status
+          if (here.status == "selected") {
+            var model = base.getItem(here.modelId);
+            model.setSomeDataEtc({distanceFromFocus: 0}, this.getLocalId());
           }
         } // end if it's view/html
       }//end updateFrom

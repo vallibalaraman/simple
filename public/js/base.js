@@ -203,10 +203,10 @@ window.base = base = (function createBase() {
       return core.dataEtc;
     }
     //+setDataEtc(dataEtc:Object):Boolean
-    function setDataEtc(givenDataEtc) {
+    function setDataEtc(givenDataEtc, setter) {
       if (typeof givenDataEtc === 'object') {
         core.dataEtc = givenDataEtc;
-        publish();
+      publishToAllBut(setter);
         return true;
       }
       else return false;
@@ -214,13 +214,13 @@ window.base = base = (function createBase() {
     
     //+addToDataEtc(enumerables:Object):Boolean
     //will overwrite if key already exists in dataEtc!
-    function setSomeDataEtc(enumerables) {
+    function setSomeDataEtc(enumerables, setterId) {
       if (typeof enumerables !== 'object') return false;
       for (var i in enumerables) {
         //overwrite any property of the same name
         core.dataEtc[i] = enumerables[i];
       }
-      publish();
+      publishToAllBut(setterId);
       return true;
     }
     
@@ -314,9 +314,9 @@ window.base = base = (function createBase() {
     }
     
     //the setter functions call this utility to send this id to the updateFrom functions of subscribers
-    
-    function publish() {
-      console.log("Something set '" + core.localId + "'");
+    //but if setterId item is a subscriber, we don't want to send to that item
+    function publishToAllBut(setterId) {
+      console.log("'" + setterId + "' set '" + core.localId + "';");
       var sub;
       for (var i in core.subscriberIds) {
         sub = core.subscriberIds[i];
@@ -326,6 +326,9 @@ window.base = base = (function createBase() {
           if (i != 0) {
             console.log(core.localId + " tried to publish to subscriber " + sub + ", which doesn't exist in items.");
           }
+        }
+        else if (items[sub].getLocalId() == setterId) {
+          //do nothing
         }
         else {
           items[sub].updateFrom(core.localId);
@@ -558,8 +561,8 @@ window.base = base = (function createBase() {
         addPublisher(pub);
       }
       //run supplied core updateFrom function
-      console.log("so '" + pub + "' sent update to '" + core.localId + "'.");
-      core.updateFrom.call(items[core.localId], pub);
+      console.log("'" + pub + "' sent update to '" + core.localId + "';");
+      core.updateFrom.call(items[core.localId], getItem(pub));
     }
   
     //+getUpdateFromFunction():Function

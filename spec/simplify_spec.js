@@ -488,14 +488,12 @@ describe("base", function () {
   describe("when createItem is passed an updateFrom function and item.setDataEtc is called", function () {
     it("ensures item sends updateFrom to subscribers who can then manipulate themselves and publisher", function() {
       var func = function() {console.log('Publisher updateFrom called because subscriber changed?');};
-      var func2 = function(publisherId) {
+      var func2 = function(publisher) {
         //console.log(this.getLocalId() + " got the message that publisher " + publisherId + " changed!");
-        var publisher = base.getItem(publisherId);
         this.setDataEtc({attribute1: publisher.getDataEtc().attribute1, attribute2: 'This was additional message from sub to itself'});
         var dataForPub = publisher.getDataEtc();
         //don't start infinite loop!
         if (dataForPub.attribute3) return;
-        //console.log("   and " + this.getLocalId() + " changed " + publisherId + " again!");
         dataForPub.attribute3 = 'This is from your subscriber ' + this.getLocalId();
         publisher.setDataEtc(dataForPub);
       }
@@ -576,9 +574,8 @@ describe("base", function () {
       var item2 = base.createItem({
         dataEtc: {attributeNotToBeTouched: "Second"},
         publisherIds: ["First"],
-        updateFrom: function(publisherId) {
-          var pub = base.getItem(publisherId);
-          this.setSomeDataEtc(pub.getDataEtc());
+        updateFrom: function(publisher) {
+          this.setSomeDataEtc(publisher.getDataEtc());
         }
       });
       item1.setSomeDataEtc({attributeToBeCopied: "First the sequel"});
