@@ -34,7 +34,7 @@ UpdateFrom:Function(publisherId:String):Boolean
 ACCEPTED DATE: 8 MARCH 2013
 
 */
-//single instance of container and factory for local vertices/items
+//single instance of factory and container and pub/sub organizer for data items (nodes)
 window.base = base = (function createBase() {
   "use strict";
   //private inner container
@@ -49,7 +49,7 @@ window.base = base = (function createBase() {
     }
     //check that typeof === string
     if (typeof id !== 'string' ) {
-      id = false;
+      id = undefined;
     }
     return id;
   }
@@ -62,8 +62,8 @@ window.base = base = (function createBase() {
     }
     if (typeof givenCore === 'object') {
       //we don't want given core to be modified, so we turn it into string, copy it, and restore it
+      //but the updateFrom function doesn't survive this process, so it is the exception
       try {
-        //but the updateFrom function doesn't survive this process, so it is the exception
         var updateFromFunction;
         if (givenCore.updateFrom) {
           updateFromFunction = givenCore.updateFrom;
@@ -76,7 +76,7 @@ window.base = base = (function createBase() {
         core = "Input could not be read by base.createItem().";
       }
     }
-    else {
+    else { //typeof givenCore !== 'object'
       core = givenCore.toString();
     }
     
@@ -88,8 +88,8 @@ window.base = base = (function createBase() {
     var unverifiedPublishers = [];
     
     //check given core for localId
-    if (core && core.localId) {
-      //create core.dataEtc. if not there
+    if (core.localId) {
+      //create core.dataEtc. if not there, because we may need it already--to store unaccepted ids
       if (!core.dataEtc) {
         core.dataEtc = {};
       }
@@ -313,9 +313,10 @@ window.base = base = (function createBase() {
       return parseInt((publisherIdsIndex[localId]));
     }
     
-    //send this id to the updateFrom functions of subscribers
+    //the setter functions call this utility to send this id to the updateFrom functions of subscribers
+    
     function publish() {
-      console.log("something updated *" + core.localId + "*");
+      console.log("Something set '" + core.localId + "'");
       var sub;
       for (var i in core.subscriberIds) {
         sub = core.subscriberIds[i];
@@ -557,7 +558,7 @@ window.base = base = (function createBase() {
         addPublisher(pub);
       }
       //run supplied core updateFrom function
-      console.log("*" + pub + "* updated *" + core.localId + "*");
+      console.log("so '" + pub + "' sent update to '" + core.localId + "'.");
       core.updateFrom.call(items[core.localId], pub);
     }
   
