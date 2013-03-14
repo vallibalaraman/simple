@@ -2,7 +2,7 @@
 
 window.simplifier = simplifier = (function createSimplifier() {
   "use strict";
-  
+  var counter = 0;
   function go() {
     createItems();
     //act as presenter: pass message and cause model to update its presenter
@@ -42,7 +42,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         requirements: ["jQuery", "jQueryMobile", "doT.js"]
       },//end of dataEtc
       updateFrom: function updateFrom(publisher) {
-        var presenter = publisher;
+        var presenter = publisher; console.log('view: ' + publisher.getLocalId() + ' ' + counter++)
         //get view markup here as set by presenter
         var here = this.getDataEtc().data;
         var viewMarkup = base.getItem(here.viewMarkupId);
@@ -55,7 +55,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         $('#page').trigger('create');
         if (here.elementId == "Step") { 
           $('#page').append('<br>');
-        }
+        } 
         var id = here.elementId
         var elId = "#" + id;
         var iconString = 'arrow-d';
@@ -125,9 +125,9 @@ window.simplifier = simplifier = (function createSimplifier() {
     
     function presenterUpdateFrom(publisher) {
       var pInfo = publisher.getDataEtc();
-      var here = this.getDataEtc();
+      var here = this.getDataEtc(); 
       var model = base.getItem(here.modelId);
-      var position = model.getDataEtc().position;
+      var position = model.getDataEtc().position; 
       var listModel = base.getItem(model.getDataEtc().listModelId);
       if (!listModel) {
         //this is a presenter for a listModel
@@ -137,7 +137,12 @@ window.simplifier = simplifier = (function createSimplifier() {
       if ("distanceFromFocus" in pInfo) {
         //this should be model; check distanceFromFocus; 1 means displayable, 0 means selected, 2-5 should be preloaded, -1 == "back"/"undo" history
         if (pInfo.distanceFromFocus === 1 || pInfo.distanceFromFocus === 0) {
-          if (here.isDisplayed === false) {
+        
+          if (here.isDisplayed === true) {
+            $('#' + here.elementId).show()
+          }
+          else {
+          //if (here.isDisplayed === false) {
             //set data and publish, allowing presentation function to display view
             var view = base.getItem(this.getDataEtc().viewId);
                 this.setSomeDataEtc(pInfo, this.getLocalId());
@@ -153,8 +158,9 @@ window.simplifier = simplifier = (function createSimplifier() {
         }
         else {
           //model is not displayable, so remove (is this overkill by making every item in list try to kill it's form when only one needs to?)
-          $('#' + here.elementId).closest('form').remove()
-          this.setSomeDataEtc({isDisplayed: false}, this.getLocalId());
+          $('#' + here.elementId).hide()
+          //$('#' + here.elementId).closest('form').hide()
+          //this.setSomeDataEtc({isDisplayed: false}, this.getLocalId());
         }
       }    
       //check if it's view
@@ -167,8 +173,8 @@ window.simplifier = simplifier = (function createSimplifier() {
           }
           model.setSomeDataEtc({distanceFromFocus: 0});
         }
-        else if (here.title === true) {
-      console.log(here.title)
+        if (model.getLocalId() === 'Input Area model' ) {
+      console.log(here.text)
           //it is telling us the title from field and text from textarea after change
           model.setSomeDataEtc({title: here.title, text: here.text});
         }
@@ -227,11 +233,11 @@ window.simplifier = simplifier = (function createSimplifier() {
       },
       updateFrom: function(viewUtility) {
         //publisher is view utility
-        var d = this.getDataEtc()
+        var d = this.getDataEtc(); console.log('itemview: ' + viewUtility.getLocalId() + ' ' + counter++)
         //console.log('view markup has: Step: ' + d.Step + ', Method: ' + d.Method)
         var self = this;
         //prepare to collect user events and pass them to presenter
-        $('#page').on("click", 'input', function(e) {
+        $('input').on("click", function(e) {
           var selectedId = this.id;
           if (selectedId === 'title__Input_1') return;
           var idArray = selectedId.split('_');
@@ -634,19 +640,22 @@ window.simplifier = simplifier = (function createSimplifier() {
       dataEtc: {
         dataType: "html",
         requirements: ["doT.js"],
-        data: '<div data-theme="b" style="border: 0;" data-shadow="false" {{=it.newAttribute}} id="{{=it.elementId}}"  ><br />Title:<br /><input type="text" placeholder="{{=it.placeholder}}" id="{{=it.titleFieldId}}" value="{{=it.title}}" /><br />Text:<br /><textarea placeholder="{{=it.placeholder}}"  id="{{=it.textareaId}}">{{=it.text}}</textarea></div>'
+        data: '<div data-theme="b" style="border: 0;" data-shadow="false" {{=it.newAttribute}} id="{{=it.elementId}}"  ><br /><textarea placeholder="{{=it.placeholder}}"  id="{{=it.textareaId}}">{{=it.text}}</textarea></div>' 
+        //<br />Title:<br /><input type="text" placeholder="{{=it.placeholder}}" id="{{=it.titleFieldId}}" value="{{=it.title}}" /><br />Text:
+        //taken out because typing in the text field and hitting enter caused chrome to do 100%cpu (crash) and firefox page went blank
       },
       updateFrom: function(viewUtility) {
         //publisher is view utility
-        var view = viewUtility.getDataEtc().data
-        var id = view.elementId
+        var view = viewUtility.getDataEtc().data;
+        var id = view.elementId; console.log('textareaview: ' + viewUtility.getLocalId() + ' ' + counter++)
         var self = this;
+        //this.setSomeDataEtc({updated
         //prepare to collect user events and pass them to presenter
-        $('#page').on("change", '#' + id, function(e) {
+        $('#' + id).on("change", function(e) {
           //prevent running this function twice (not sure why this is needed but it is)
           e.preventDefault();
           var titleAdded = $('#' + view.titleFieldId).val();
-          var textAdded = $('#' + view.textareaId).val();
+          var textAdded = $('#' + view.textareaId).val(); 
           var presenter = base.getItem(view.presenterId);
           presenter.setSomeDataEtc({title: titleAdded, text: textAdded}, self.getLocalId());
           presenter.getUpdateFromFunction().call(presenter, self);
