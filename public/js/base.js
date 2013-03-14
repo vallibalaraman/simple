@@ -37,6 +37,10 @@ ACCEPTED DATE: 8 MARCH 2013
 //single instance of factory and container and pub/sub organizer for data items (nodes)
 window.base = base = (function createBase() {
   "use strict";
+  
+  //toggle console logging of items setting and updating each other (slows the program down)
+  var devMode = false;
+  
   //private inner container
   var items = {};
   
@@ -316,7 +320,9 @@ window.base = base = (function createBase() {
     //the setter functions call this utility to send this id to the updateFrom functions of subscribers
     //but if setterId item is a subscriber, we don't want to send to that item
     function publishToAllBut(setterId) {
-      console.log("'" + setterId + "' set '" + core.localId + "';");
+      if (devMode) {
+        console.log("'" + setterId + "' set '" + core.localId + "';");
+      }
       var sub;
       for (var i in core.subscriberIds) {
         sub = core.subscriberIds[i];
@@ -561,7 +567,9 @@ window.base = base = (function createBase() {
         addPublisher(pub);
       }
       //run supplied core updateFrom function
-      console.log("'" + pub + "' sent update to '" + core.localId + "';");
+      if (devMode) {
+        console.log("'" + pub + "' sent update to '" + core.localId + "';");
+      }
       core.updateFrom.call(items[core.localId], getItem(pub));
     }
   

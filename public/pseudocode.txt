@@ -178,8 +178,42 @@ core should be something like...
 //If time, try dev mode 0.1 by looping through allVertices and displaying a crud interface
 //Then move on to completing importer, analyzer (chunking), checker(comparison with simplicity standard), rechecker (manual), exporter
 
+//algorithm for list:
+//record time in processedWordList
+//split by new lines
+//split by seperators
+//in each line:
+//  convert first into id in core
+//    but if parentheses, create a quick item that says variantOf: 
+//  stem? or do that lazily?
+//  second: use as key for new object
+//  in new object, state level as 3
+//  remainder of line are "extra" synonyms--for use when this turns up as a synonym
+//  save core with others in processedWordList for human checking
+//  createItem
+//record ending time in processedWordList
 
 
+
+//affixes, derivational (from Specialized English) (not yet added to the simplifier word list(s))
+//if it starts with one of the following prefixes, cut that off and check the rest; let user see both the prefix meaning and the other meaning
+  //anti- - against, opposed to (anti-government)
+  //dis- - not (dishonest, disobey)
+  //pro- - for, supporting (pro-government)
+  //re- - to do again (reorganize, reunite)
+  //self- - acted upon /by self (self-declared, self-appointed)
+  //un- - not (unusual, unhappy)
+//If it ends with one of the following suffixes, cut that off and check the rest; let user see both the prefix meaning and the other meaning
+    //These four may be added to a word to mean “the person or thing that does the action suggested by the word”-
+  //-ist - (art >artist), -er - (paint > painter), -or - (act > actor), -ant - (serve > servant)
+    //These five can change a verb into a noun closely related to the verb-
+  //-ment - (agree > agreement), -age - (marry > marriage), -tion - (protect > protection), -sion - (invade > invasion), -ing - (I like to read > I enjoy reading. A noun that uses -ing in this way is called a gerund.)
+    //These suffixes can change some nouns into adjectives-
+  //-ful - (care > careful),-al - (tradition > traditional)
+    //These suffixes can change some verbs to adjectives-
+  // -ive - (protect > protective), -ing - (save > saving)
+    //And this one can change some adjectives into nouns-
+  //-ness- (willing > willingness)
 
 
 Req 1.1
