@@ -34,7 +34,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       }
     });
     
-    //the view
+    //the view utility
     base.createItem({
       localId: "View utility",
       dataEtc: {
@@ -46,7 +46,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         //console.log('view: ' + publisher.getLocalId() + ' ' + counter++)
         //get view markup here as set by presenter
         var here = this.getDataEtc().data;
-        var viewMarkup = base.getItem(here.viewMarkupId);
+        var viewMarkup = base.getItem(here.viewMarkupId); 
         //get html template from view markup
         var templateString = viewMarkup.getDataEtc().data;
         //use it to initialize a templating function
@@ -141,7 +141,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         if (pInfo.distanceFromFocus === 1 || pInfo.distanceFromFocus === 0) {
         
           if (here.isDisplayed === true) {
-            $('#' + here.elementId).show()
+            //$('#' + here.elementId).show()
           }
           else {
           //if (here.isDisplayed === false) {
@@ -160,9 +160,9 @@ window.simplifier = simplifier = (function createSimplifier() {
         }
         else {
           //model is not displayable, so remove (is this overkill by making every item in list try to kill it's form when only one needs to?)
-          $('#' + here.elementId).hide()
-          //$('#' + here.elementId).closest('form').hide()
-          //this.setSomeDataEtc({isDisplayed: false}, this.getLocalId());
+          //$('#' + here.elementId).hide()
+          $('#' + here.elementId).closest('form').remove()
+          this.setSomeDataEtc({isDisplayed: false}, this.getLocalId());
         }
       }    
       //check if it's view
@@ -1045,7 +1045,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       ],
       updateFrom: function(publisher) {
       var pub = publisher.getDataEtc();
-      console.log(publisher.getLocalId())
+      //console.log(publisher.getLocalId())
       var here = this.getDataEtc();
         if (pub.isLoaded) {
           //Simple word list(s) complete
@@ -1061,15 +1061,16 @@ window.simplifier = simplifier = (function createSimplifier() {
         else if (pub.timesChanged) {
           //Text has been added by user  
           if (pub.timesChanged == here.timesChanged) {
-            console.log('quitting');// (TODO not tested adequately yet)
+            //console.log('quitting');// (TODO not tested adequately yet)
             return;
           }
           if (pub.text == here.text) {
-            console.log('quitting again')
+            //console.log('quitting again')
             return;
           }
           this.setSomeDataEtc({lastChange: pub.timesChanged, text: pub.text}, this.getLocalId());
           if (here.standardsReady) {
+          console.log('got ehre: ' + pub.text)
             analyze(pub.text, this);
           }
         }
@@ -1090,7 +1091,7 @@ window.simplifier = simplifier = (function createSimplifier() {
           var paragraphs = text.split('\n');
           var pText = '', div = [], sentenceLength = 0, currentSentence = [], isFinalizer = false, isFinalDot = false;
           var isBeforeWord = true, isCap = false, prevCap = false, isEasy = false, idCount = 0, sentenceId, obj = {};
-          var hardWords = {};
+          var hardWords = {}, inputId = '';
           for (var i in paragraphs) {
             pText = paragraphs[i];
             //find first alphabetical characters, case insensitive
@@ -1133,8 +1134,10 @@ window.simplifier = simplifier = (function createSimplifier() {
             //console.log('length: ' + div.length + ', div[0]: *' + div[0] + '*, isFin: ' + isFinalizer + ', isSp: ' + isBeforeWord + ', div[1]: *' + div[1] + '*, isCap: ' + isCap + ', isEasy: ' + isEasy + ', div[2]: *' + div[2] + '*, div[3]: *' + div[3] + '*');
               //check if paragraph is over or sentence is long enough and there's still a ways to go; if so, save and start new sentence
               if (!pText || (sentenceLength > 70 && pText.length > sentenceLength && (isFinalizer || (isFinalDot && !prevCap)) && isBeforeWord && isCap)) {
-                base.createItem({localId: 'input_' + idCount++, dataEtc: {tArray: currentSentence}});
-              //temp?
+                //check if id is already there; if so, delete, then recreate
+                inputId = 'input_' + idCount++;
+                if (base.getItem(inputId)) base.deleteItem(inputId);
+                base.createItem({localId: inputId, dataEtc: {tArray: currentSentence}});
             //console.log('sentence length: ' + sentenceLength);
                 currentSentence = [];
                 sentenceLength = 0;
@@ -1165,7 +1168,10 @@ window.simplifier = simplifier = (function createSimplifier() {
             }//end while pText
             //paragraph text is over, so take current sentence and add a line break, then save
             currentSentence.push('\n');
-            base.createItem({localId: 'input_' + idCount++, dataEtc: {tArray: currentSentence}});
+            //check if id is already there; if so, delete, then recreate
+            inputId = 'input_' + idCount++;
+            if (base.getItem(inputId)) base.deleteItem(inputId);
+            base.createItem({localId: inputId, dataEtc: {tArray: currentSentence}});
           }//end for each paragraph
           self.setSomeDataEtc({hardWords: hardWords});
           /*AN EXAMPLE OF HOW LATER TO OUTPUT FINAL TEXT
@@ -1242,11 +1248,10 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Hard Words presenter",
       dataEtc: {
         viewId: "View utility",
-        viewMarkupId: "Item view markup",
-        newAttribute: "",
-        parentId: "Hard",
+        modelId: "Hard Words tool model",
         selectedIndex: 0,
         hardWordsArray: [],
+        lastChange: 0,
         isDisplayed: false
         //elementId will be added here, but often changed, so don't depend on it's value
       },
@@ -1254,15 +1259,28 @@ window.simplifier = simplifier = (function createSimplifier() {
         "Hard Words tool model"
       ],
       updateFrom: function(publisher) {
-        var pub = publisher.getDataEtc();
+        var pub = publisher.getDataEtc(); 
         var here = this.getDataEtc();
         //if publisher is Hard Words tool model, get hard words and turn them into an array for displaying
           //(before they were in object for lookup by the word itself when encountered in the text, but present view prefers numbers)
         if (pub.hardWords) {
+          var num = pub.lastChange;
           //it is the Hard Words tool model and it has processed the text (or some of it)
           //if not isDisplayed, give them to view utility one by one and set isDisplayed to true
-          if (pub.distanceFromFocus > -1 && pub.distanceFromFocus < 2 && !here.isDisplayed) {
-            display(this);
+          if (pub.distanceFromFocus > -1 && pub.distanceFromFocus < 2) {
+            if (!here.isDisplayed) {
+            this.setSomeDataEtc({lastChange: num}, this.getLocalId());
+            //this.setSomeDataEtc({lastChange: pub.lastChange}, this.getLocalId());
+            display(this); //sets isDisplayed to true
+            }
+            else if (pub.lastChange > here.lastChange) {
+              //already displayed but must undisplay and redisplay
+              for (var i in here.hardWordsArray) {
+                $('#Hard_' + (i)).closest('div').remove();
+              }
+             this.setSomeDataEtc({lastChange: num, isDisplayed: true}, this.getLocalId());
+              display(this);
+            }
           }
         }//if it's the Hard Words tool model but no hardWords, do nothing until it announces its hardWords are ready.
         //if update is run by view markup, it has set selectedIndex here, so fetch and set selectedWord in model for future observers
@@ -1281,13 +1299,151 @@ window.simplifier = simplifier = (function createSimplifier() {
             hardArray.push(word);
             //set data and publish to view
             var view = base.getItem(self.getDataEtc().viewId);
-            var selection = (num === 1) ? true : false;
-            var thisData = {text: word, position: num, isSelected: selection, parentId: 'Hard', elementId: 'Hard_' + num, 
-              viewMarkupId: here.viewMarkupId, newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
+            var selection = false;
+            if (num === 1) {
+              selection = true;
+              //var model = base.getItem(self.getDataEtc().modelId);
+              //model.setSomeDataEtc({selectedWord: word});
+            }
+            var thisData = {text: word, position: num, isSelected: selection, parentId: 'Hard', elementId: elementId, 
+              viewMarkupId: "Item view markup", newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
             view.setSomeDataEtc({data: thisData}, self.getLocalId());
             view.getUpdateFromFunction().call(view, self);
           }
-          self.setDataEtc({isDisplayed: true, hardWordsArray: hardArray}, self.getLocalId());
+          self.setSomeDataEtc({isDisplayed: true, hardWordsArray: hardArray}, self.getLocalId());
+        }//end display()
+        
+      }//end updateFrom
+    });//end create presenter
+    
+    //Req. 2.4
+    //Create Instance tool model
+    base.createItem({
+      localId: "Instance tool model",
+      dataEtc: {
+        distanceFromFocus: 2,
+        selectedItem: 0
+      },
+      publisherIds: [
+        "Hard Words tool model"
+      ],
+      updateFrom: function(publisher) {
+        this.setSomeDataEtc({distanceFromFocus: publisher.getDataEtc().distanceFromFocus});
+      }
+    });//end create Vocab Level tool model
+    
+    
+    //Create 2.4 Instance tool presenter  
+    base.createItem({
+      localId: "Instance tool presenter",
+      dataEtc: {
+        elementId: "Instance", 
+        orientation: "vertical", 
+        newAttribute: "style='display: inline-block;'",
+        modelId: "Instance tool model",
+        viewId: "View utility",
+        viewMarkupId: "List view markup",
+        parentId: "page",
+        selectedItem: 0,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Instance tool model"
+      ],
+      updateFrom: presenterUpdateFrom
+    });
+    
+    //Create Instance title model
+    base.createItem({
+      localId: "Instance title model",
+      dataEtc: {
+        text: '2.4 Instance',
+        distanceFromFocus: 2,
+        listModelId: "Instance tool model",
+        position: 0
+      },
+      publisherIds: [
+        "Instance tool model"
+      ],
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    base.createItem({
+      localId: "Instance title presenter",
+      dataEtc: {
+        elementId: "Instance_0", 
+        modelId: "Instance title model",
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        newAttribute: "disabled='disabled'",
+        parentId: "Instance",
+        isSelected: false,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Instance title model"
+      ],
+      updateFrom: presenterUpdateFrom
+    });//end create presenter
+     
+    
+    //create presenter for auto-generated model data regarding sentences/instances
+    base.createItem({
+      localId: "Instance presenter",
+      dataEtc: {
+        viewId: "View utility",
+        hardWords: {},
+        sentenceArray: [],
+        selectedIndex: 1,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Hard Words tool model",
+        "Instance tool model"
+      ],
+      updateFrom: function(publisher) {
+        var pub = publisher.getDataEtc(); 
+        var here = this.getDataEtc();
+        //if publisher is Hard Words tool model, get hard word and look it up in hard words to find sentences; put them in array
+        if (pub.hardWords) {
+          var word = pub.selectedWord; console.log('got here: ' + word)
+          var sentences = pub.hardWords[word];
+          var sArray = [];
+          for (var id in sentences) { 
+            sArray.push(id);
+          }
+          this.setSomeDataEtc({sentenceArray: sArray});
+        }
+        else if (pub.dataType == "html") {
+        //TODO update for observers
+        }
+        else if (publisher.getLocalId() === 'Instance tool model') {
+          if (pub.distanceFromFocus < 2) {
+            display(this);
+          }
+          else {
+            //title will remove all?
+          }
+        }
+        var self = this;
+        
+        function display(self) { 
+          var num = 1; 
+          for (var id in self.sentenceArray) {
+            var sentenceItem = base.getItem(id);
+            var textArray = sentenceItem.getDataEtc().tArray;
+            var sentence = textArray.join('');
+            //set data and publish to view
+            var view = base.getItem(self.getDataEtc().viewId);
+            var selection = (num === 1) ? true : false;
+            var elementId = 'Instance_' + num;
+            var thisData = {text: sentence, position: num, isSelected: selection, parentId: 'Instance', elementId: elementId, 
+              viewMarkupId: "Item view markup", newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
+            view.setSomeDataEtc({data: thisData}, self.getLocalId());
+            view.getUpdateFromFunction().call(view, self);
+            num++;
+          }
+          self.setSomeDataEtc({isDisplayed: true});
         }//end display()
         
       }//end updateFrom
@@ -1297,6 +1453,8 @@ window.simplifier = simplifier = (function createSimplifier() {
   return {
     go: go
   }
+  //TODO: reactivate the logging in Hard Words tool model on 1048 and 1068 to debug why it runs so many times on changing step
+  //Oh I know why: I shouldn't keep adding the same event handler to all inputs every time something displays!!!
   
 })();
   
