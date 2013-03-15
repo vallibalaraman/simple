@@ -18,3 +18,6 @@ Base forces me in presenter to record modelId twice: once in publisherIds and on
 On a related topic, when a change occurs, all subscribers are updated, making debugging difficult if there are many subscribers? Better to have them subscribe to certain "topics"? (though some may need all changes--eg. undo log)? As in pubsubjs?
 On a related topic, it notifies for EVERY change. I guess that's good for logging, but sometimes I wish we could stipulate suppressMostPublishing or require manual publish() for most publishing, i.e. that which is not important for undo, etc.
 body parts are defined as 'part of the body'
+The following notes indicate known bugs:
+//TODO add stemming here, trying again to make it easy if it presently fails the isEasy test (e.g. 'Did')
+//TODO add affixes here, trying again to make it easy if it presently fails the isEasy test (e.g. 'undo', because do is in list and un- is easy)

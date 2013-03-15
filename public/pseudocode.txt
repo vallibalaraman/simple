@@ -205,7 +205,16 @@ core should be something like...
 //if last word was not cap (i.e. avoid "Mr. X"), last non word started with sentence-ending punctuation and ended with space, and next word starts with cap
 //then finalize the sentence, save it with next numbered id
 
-
+updateFrom: function updateFromForHardWordsPresenter(publisher) {
+        //if publisher is Hard Words tool model, get hard words and turn them into an array for displaying
+          //(before they were in object for lookup by the word itself when encountered in the text, but present view prefers numbers)
+          //if isDisplayable and not isDisplayed, give them to view utility one by one and set isDisplayed to true
+        //if publisher is Vocab Level tool model, check if hardWordsArray length indicates Hard Words tool model has processed
+          //if so and isDisplayed is false, give hard words to view utility one by one and set isDisplayed to true
+          //regardless, set isDisplayable to true, probably
+        //if update is run by view markup, it has set selectedIndex here, so fetch and set selectedWord in model for future observers
+        
+        
 //affixes, derivational (from Specialized English) (not yet added to the simplifier word list(s))
 //if it starts with one of the following prefixes, cut that off and check the rest; let user see both the prefix meaning and the other meaning
   //anti- - against, opposed to (anti-government)
