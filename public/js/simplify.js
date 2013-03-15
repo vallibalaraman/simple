@@ -42,7 +42,8 @@ window.simplifier = simplifier = (function createSimplifier() {
         requirements: ["jQuery", "jQueryMobile", "doT.js"]
       },//end of dataEtc
       updateFrom: function updateFrom(publisher) {
-        var presenter = publisher; console.log('view: ' + publisher.getLocalId() + ' ' + counter++)
+        var presenter = publisher; 
+        //console.log('view: ' + publisher.getLocalId() + ' ' + counter++)
         //get view markup here as set by presenter
         var here = this.getDataEtc().data;
         var viewMarkup = base.getItem(here.viewMarkupId);
@@ -174,9 +175,9 @@ window.simplifier = simplifier = (function createSimplifier() {
           model.setSomeDataEtc({distanceFromFocus: 0});
         }
         if (model.getLocalId() === 'Input Area model' ) {
-      console.log(here.text)
-          //it is telling us the title from field and text from textarea after change
-          model.setSomeDataEtc({title: here.title, text: here.text});
+          //it is telling us the (title from field and) text from textarea after change
+          var numChanges = model.getDataEtc().timesChanged + 1;
+          model.setSomeDataEtc({timesChanged: numChanges, text: here.text}); //title: here.title,
         }
       } // end if it's view/html
     }//end presenterUpdateFrom
@@ -233,7 +234,8 @@ window.simplifier = simplifier = (function createSimplifier() {
       },
       updateFrom: function(viewUtility) {
         //publisher is view utility
-        var d = this.getDataEtc(); console.log('itemview: ' + viewUtility.getLocalId() + ' ' + counter++)
+        var d = this.getDataEtc(); 
+        //console.log('itemview: ' + viewUtility.getLocalId() + ' ' + counter++)
         //console.log('view markup has: Step: ' + d.Step + ', Method: ' + d.Method)
         var self = this;
         //prepare to collect user events and pass them to presenter
@@ -624,6 +626,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         placeholder: 'Type or paste text here',
         title: "",
         text: "",
+        timesChanged: 0,
         distanceFromFocus: 2,
         listModelId: "1.2 Input tool model",
         position: 1
@@ -647,7 +650,8 @@ window.simplifier = simplifier = (function createSimplifier() {
       updateFrom: function(viewUtility) {
         //publisher is view utility
         var view = viewUtility.getDataEtc().data;
-        var id = view.elementId; console.log('textareaview: ' + viewUtility.getLocalId() + ' ' + counter++)
+        var id = view.elementId; 
+        //console.log('textareaview: ' + viewUtility.getLocalId() + ' ' + counter++)
         var self = this;
         //this.setSomeDataEtc({updated
         //prepare to collect user events and pass them to presenter
@@ -657,6 +661,12 @@ window.simplifier = simplifier = (function createSimplifier() {
           var titleAdded = $('#' + view.titleFieldId).val();
           var textAdded = $('#' + view.textareaId).val(); 
           var presenter = base.getItem(view.presenterId);
+          var presD = presenter.getDataEtc();
+          //console.log(presD.text + ' ' + textAdded)
+          if (presD.text && presD.text == textAdded) {
+            console.log('not changed on change')
+            return;
+          }
           presenter.setSomeDataEtc({title: titleAdded, text: textAdded}, self.getLocalId());
           presenter.getUpdateFromFunction().call(presenter, self);
         });
@@ -688,7 +698,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     //now Req. 2.1.1
     //Creat3 List3 loader model
     base.createItem({
-      localId: "List3 loader model",
+      localId: "List3 Loader model",
       dataEtc: {
         data: {
         },
@@ -724,7 +734,7 @@ window.simplifier = simplifier = (function createSimplifier() {
           var parts = line.split(' - ');
           //  convert first part into id in core
           var core = {}
-          core.localId = parts[0];
+          core.localId = parts[0] + '-EN';
           //console.log(core.localId);
           core.dataEtc = {};
           //  stem? or do that lazily?
@@ -749,16 +759,146 @@ window.simplifier = simplifier = (function createSimplifier() {
           }
           //  createItem
           var item = base.createItem(core);
-          if (item.getLocalId() !== parts[0]) console.log('WARNING localId not right: ' + item.getLocalId() + ' !== ' + parts[0]);
+          if (item.getLocalId() !== parts[0] + '-EN') console.log('WARNING localId not right: ' + item.getLocalId() + ' !== ' + parts[0]);
         }
         this.setSomeDataEtc({isLoaded: true}, this.getLocalId());
         //console.log("ending: " + new Date());
         //console.log("lexemeCount: " + lexemeCount);
         //console.log("wordCount: " + wordCount);
       }
-      
-    });//end of List2 loader model
+    });//end of List3 loader model
     
+    //Create checker model
+    base.createItem({
+      localId: "Checker model",
+      dataEtc: {
+        standardsReady: false,
+        lastChange: 0,
+        text: ''
+      },
+      publisherIds: [
+        "List3 Loader model",
+        "Input Area model"
+      ],
+      updateFrom: function(publisher) {
+      var pub = publisher.getDataEtc();
+      console.log(publisher.getLocalId())
+      var here = this.getDataEtc();
+        if (pub.isLoaded) {
+          //Simple word list(s) complete
+          if (here.standardsReady) return;
+          this.setSomeDataEtc({standardsReady: true}, this.getLocalId());
+          if (here.lastChange > 0) {
+            analyze(here.text);
+          }
+        }
+        if (pub.timesChanged) {
+          //Text has been added by user
+          if (pub.timesChanged == here.timesChanged) {
+            console.log('quitting')
+            return;
+          }
+          if (pub.text == here.text) {
+            console.log('quitting again')
+            return;
+          }
+          this.setSomeDataEtc({lastChange: pub.timesChanged, text: pub.text}, this.getLocalId());
+          if (this.getDataEtc().standardsReady) {
+            analyze(pub.text);
+          }
+        }
+        function analyze(text) {
+          //break up user text
+          //First, break at line breaks
+          var paragraphs = text.split('\n');
+          var hardWords = {};
+          var textArray = [];
+          var pText = '', div = [], sentenceLength = 0, currentSentence = [], isFinalizer = false, isFinalDot = false;
+          var isBeforeWord = true, isCap = false, prevCap = false, isEasy = false, pTextJoin = '', idCount = 0;
+          for (var i in paragraphs) {
+            pText = paragraphs[i];
+            //find first alphabetical characters, case insensitive
+            //split and take first as non-word
+            //for every non-word, keep track of first char, last (and length?)
+            div = pText.split(/([a-zA-Z].*)/);
+            //keep track of sentence length
+            sentenceLength = div[0].length
+            //for every non-word, add to current sentence
+            currentSentence = [div[0]];
+            //deal with the remainder of the pText
+              if (div[1]) {
+                pText = div[1];
+              } else pText = '';
+            while (pText) {
+              //get an alphabetical word, isolating it from ' if not followed by alph or any non-alph and all that follows.
+              div = pText.split(/(\'(?![a-zA-Z])(.|\n)*|[^a-zA-Z\'](.|\n)*)/);
+              //keep track of sentence length
+              sentenceLength += div[0].length;
+              //if the first letter of the last word was capitalized, the final period and following cap may not mean anything
+              //e.g. Mr. Doe
+              prevCap = isCap;
+              //if the first letter is capitalized, it may be the beginning of a sentence
+              isCap = /^[A-Z]/.test(div[0]);
+              //check to see if it is in the easy-list
+              isEasy = (base.getItem(div[0] + '-EN') || base.getItem(div[0].toLowerCase() + '-EN')) ? true: false;
+            //console.log('length: ' + div.length + ', div[0]: *' + div[0] + '*, isFin: ' + isFinalizer + ', isSp: ' + isBeforeWord + ', div[1]: *' + div[1] + '*, isCap: ' + isCap + ', isEasy: ' + isEasy + ', div[2]: *' + div[2] + '*, div[3]: *' + div[3] + '*');
+              //check if paragraph is over or sentence is long enough and there's still a ways to go; if so, save and start new sentence
+              if (!pText || (sentenceLength > 70 && pText.length > sentenceLength && (isFinalizer || (isFinalDot && !prevCap)) && isBeforeWord && isCap)) {
+                base.createItem({localId: 'input_' + idCount++, dataEtc: {tArray: currentSentence}});
+              //temp?
+            //console.log('sentence length: ' + sentenceLength);
+                currentSentence = [];
+                sentenceLength = 0;
+              }
+              //for every word, add to current sentence
+              currentSentence.push(div[0]);
+              //deal with the remainder of the pText
+              if (div[1]) {
+                pText = div[1];
+              } else pText = '';
+              //get non-alphabetic characters after each word
+              div = pText.split(/([a-zA-Z].*)/);
+              //if it includes a final punctuation not followed by a digit, it may be the end of a sentence
+              isFinalizer = /[!?]/.test(div[0]);
+              //if it includes a dot not followed by a digit, it may be the end of a sentence.
+              isFinalDot = /\.(?!\d)/.test(div[0]);
+              //if it ends with a space, it is end of word and may be the end of a sentence
+              isBeforeWord = (!div[0] || /\s$/.test(div[0]));
+              //for every non-word, add to current sentence
+              currentSentence.push(div[0]);
+              //keep track of sentence length
+              sentenceLength += div[0].length;
+            //console.log('length: ' + div.length + ', div[0]: *' + div[0] + '*, isFin: ' + isFinalizer + ', isSp: ' + isBeforeWord + ', div[1]: *' + div[1] + '*, div[2]: *' + div[2] + '*');
+              //deal with the remainder of the pText
+              if (div[1]) {
+                pText = div[1];
+              } else pText = '';
+            }//end while pText
+            //paragraph text is over, so take current sentence and add a line break, then save
+            currentSentence.push('\n');
+            base.createItem({localId: 'input_' + idCount++, dataEtc: {tArray: currentSentence}});
+          }//end for each paragraph
+          /*AN EXAMPLE OF HOW LATER TO OUTPUT FINAL TEXT
+          var nextInt = 0;
+          var nextItem = base.getItem('input_' + nextInt);
+          while (nextItem) {
+            console.log(nextItem.getDataEtc().tArray.join(''))
+            nextItem = base.getItem('input_' + nextInt++)
+            if (nextInt > 1000) {
+              console.log('>1000')
+              break;
+            }
+          }
+          */
+          //for every word, check first letter and remember whether capitalized or not
+          //also check for the word in simple list
+          //consider stemming, affixes, etc.
+          //if not, add it as key in dataEtc.hardWords, if not already, and push next sentence id to value array
+          //if last word was not cap (i.e. avoid "Mr. X"), last non word started with sentence-ending punctuation and ended with space, and next word starts with cap
+          //then finalize the sentence, save it with next numbered id
+        }
+      }
+    });
   }
   return {
     go: go

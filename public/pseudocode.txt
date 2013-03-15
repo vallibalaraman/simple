@@ -193,6 +193,17 @@ core should be something like...
 //  createItem
 //record ending time in processedWordList
 
+//break up user text
+//find index of first alphabetical character
+//if at beginning (0), disregard index, else split and take first as non-word
+//for every non-word, add to current sentence
+//for every word, check first letter and remember whether capitalized or not
+//also check for the word in simple list
+//consider stemming, affixes, etc.
+//if not, add it as key in dataEtc.hardWords, if not already, and push next sentence id to value array
+//for every non-word, keep track of first char, last (and length?)
+//if last word was not cap (i.e. avoid "Mr. X"), last non word started with sentence-ending punctuation and ended with space, and next word starts with cap
+//then finalize the sentence, save it with next numbered id
 
 
 //affixes, derivational (from Specialized English) (not yet added to the simplifier word list(s))
