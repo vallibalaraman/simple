@@ -1,0 +1,68 @@
+<!DOCTYPE html> 
+<html> 
+<head> 
+	<title>My Page</title> 
+	<meta name="viewport" content="width=device-width, initial-scale=1"> 
+	<script src="js/jquery.min.js"></script>
+	<script src="js/jquery.mobile-1.2.0.min.js"></script>
+	<link rel="stylesheet" href="css/jquery.mobile-1.2.0.min.css" />
+  <script src="js/doT.min.js" type="text/javascript"></script>
+
+</head> 
+<body> 
+<div data-role="page" id="page" >
+</div><!-- /page -->
+<script type="text/javascript" >
+  $(document).ready(function() { 
+    
+    var templateString1 = '<form style="margin: 5px 5px 25px 5px;"> <fieldset data-role="controlgroup" data-type="{{=it.orientation}}" style="text-align: center;" id="outer">      </fieldset></form>';
+
+    var template1 = doT.template(templateString1); 
+    var data = { orientation: 'horizontal' }; 
+    var text = template1(data); 
+    $('#page').append(text);
+    $('#page').trigger('create');
+    
+    var templateString2 = '<input type="radio" name="radio-choice-h-2" id="radio-choice-h-2{{=it.partId}}" value="on" {{=it.status}} />        <label for="radio-choice-h-2{{=it.partId}}">{{=it.title}}</label> ';
+    var template2 = doT.template(templateString2); 
+    
+    var dataA = { partId: 'step1', title: 'Step 1: Import Text', status: ''}; 
+    text = template2(dataA); 
+    $('#outer').append(text);
+    //the following should be delegated as in api.jquery.com/on, but I can't make it work for some reason, even with .trigger('create')
+    $('#radio-choice-h-2step1').on('click', {foo: 'import text was chosen'}, function(event) {
+      console.log(event.data.foo) //=>'bar'
+    });
+    
+    
+    data = { partId: 'step2', title: 'Step 2: Simplify', status: 'checked="checked"'}; 
+    text = template2(data);
+    $('#outer').append(text);
+    data = { partId: 'step3', title: 'Step 3: Export Text', status: ''}; 
+    text = template2(data);
+    $('#outer').append(text);
+    //$('#outer').trigger('create');
+    
+    var templateString3 = '<form style="display: inline-block;  vertical-align: top; margin: 5px 0px 5px 15px;"> <fieldset data-role="controlgroup" data-type="vertical"  data-iconpos="right" style="display: inline-block;">        <input type="button" name="radio-choice-h-2" id="radio-choice-h-2a" value="1.1 Import Method" disabled="disabled">           <input type="radio" name="radio-choice-h-2" id="radio-choice-h-2b" value="byTextarea" checked="checked">        <label for="radio-choice-h-2b">Paste in text area</label>     <input type="radio" name="radio-choice-h-2" id="radio-choice-h-2c" value="byFile">        <label for="radio-choice-h-2c">Open file</label><input type="radio" name="radio-choice-h-2" id="radio-choice-h-2d" value="resume">        <label for="radio-choice-h-2d">Resume earlier project</label></fieldset></form>';
+
+    var tmpl = doT.template(templateString3); 
+    data = { title: 'Yeah!' }; 
+    text = tmpl(data); 
+    $('#page').append(text);
+    $('#page').trigger('create');
+     
+    var templateString4 = '<form style="display: inline-block; margin: 5px 0px 5px 15px; vertical-align: top;"> <fieldset data-role="controlgroup" data-type="vertical"  data-iconpos="right" style="display: inline-block;">        <input type="button" name="radio-choice-h-2" id="radio-choice-h-2a" value="1.1 Import Method" disabled="disabled">         <input type="button" name="radio-choice-h-2" id="radio-choice-h-2a" value="Text area" data-theme="b" data-iconpos="right" data-icon="arrow-r">     <input type="button" name="radio-choice-h-2" id="radio-choice-h-2a" value="Open file">     </fieldset></form>';
+
+    var tmpl = doT.template(templateString4); 
+    data = { title: 'Yeah!' }; 
+    text = tmpl(data); 
+    $('#page').append(text);
+    $('#page').trigger('create');
+    
+    
+    
+  
+  }) //end doc ready
+</script>
+</body>
+</html>

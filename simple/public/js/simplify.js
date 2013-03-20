@@ -4,7 +4,6 @@ window.simplifier = simplifier = (function createSimplifier() {
   "use strict";
   var counter = 0;
   function go() {
-    console.log(go.length)
     createItems();
     //act as presenter: pass message and cause model to update its presenter
     base.getItem("Steps tool model").setSomeDataEtc({distanceFromFocus: 1});
