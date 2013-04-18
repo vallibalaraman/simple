@@ -6,6 +6,7 @@ window.simplifier = simplifier = (function createSimplifier() {
   //itemEventHandler (and textareaEventHandler?) allows program to prevent duplicate event handlers
   var itemEventHandler = false;
   function go() {
+    console.log(go.length)
     createItems();
     //act as presenter: pass message and cause model to update its presenter
     base.getItem("Steps tool model").setSomeDataEtc({distanceFromFocus: 1});
@@ -143,7 +144,10 @@ window.simplifier = simplifier = (function createSimplifier() {
         //this should be model; check distanceFromFocus; 1 means displayable, 0 means selected, 2-5 should be preloaded, -1 == "back"/"undo" history
         if (pInfo.distanceFromFocus === 1 || pInfo.distanceFromFocus === 0) {
         
-          if (!$('#' + here.elementId).length) {
+          if (here.isDisplayed === true) {
+            //$('#' + here.elementId).show()
+          }
+          else {
           //if (here.isDisplayed === false) {
             //set data and publish, allowing presentation function to display view
             var view = base.getItem(this.getDataEtc().viewId);
@@ -198,7 +202,6 @@ window.simplifier = simplifier = (function createSimplifier() {
       ],
       updateFrom: itemModelUpdateFrom
     });
-    
     function itemModelUpdateFrom(publisher) {
       //publisher is List model
       var listInfo = publisher.getDataEtc();
@@ -1052,8 +1055,9 @@ window.simplifier = simplifier = (function createSimplifier() {
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc();
         var here = this.getDataEtc();
-        //console.log('in hwtm, pub: ' + publisher.getLocalId() + ', selectedWord: ' + here.selectedWord);
+        console.log('in hwtm, pub: ' + publisher.getLocalId() + ', selectedWord: ' + here.selectedWord);
         if (pub.isLoaded) {
+        console.log('list3 loader model triggered hard words tool model')
           //Simple word list(s) complete
           //if that's already recorded, nothing more to do
           if (here.standardsReady) return;
@@ -1075,6 +1079,7 @@ window.simplifier = simplifier = (function createSimplifier() {
             return;
           }
           this.setSomeDataEtc({lastChange: pub.timesChanged, text: pub.text}, this.getLocalId());
+          console.log('standardsReady: ' + here.standardsReady)
           if (here.standardsReady) {
             analyze(pub.text, this);
           }
@@ -1428,18 +1433,15 @@ window.simplifier = simplifier = (function createSimplifier() {
             }
           } */
           //if the selectedWord has not changed in Hard Words tool model, no need to update instances
-          if (word == here.hardWord) {
-            return;
-          }
+          if (word == here.hardWord) return;
           //else if the selectedWord has changed and instances are displayed for a previous selected word, erase all and start over
           if (here.hardWord) {
             this.setSomeDataEtc({hardWord: '', isDisplayed: false}, this.getLocalId());
             $('#Instance_0').closest('form').remove();
             var model = base.getItem("Instance tool model");
             model.setSomeDataEtc({selectedItem: 0}, this.getLocalId());
-            return;
           }
-          //else there are no instances displayed yet, so go ahead and display them.
+          //else if there are no instances displayed yet, go ahead and display them.
           var sentences;
           if (pub.hardWords[word]) {
             sentences = pub.hardWords[word].sentences;

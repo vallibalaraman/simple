@@ -21,3 +21,5 @@ body parts are defined as 'part of the body'
 The following notes indicate known bugs:
 //TODO add stemming here, trying again to make it easy if it presently fails the isEasy test (e.g. 'Did')
 //TODO add affixes here, trying again to make it easy if it presently fails the isEasy test (e.g. 'undo', because do is in list and un- is easy)
+
+1.2 "The text to simplify" tool GUI--the blue does not connect visually to the gray the way it should.

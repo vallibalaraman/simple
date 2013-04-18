@@ -3,7 +3,10 @@
 window.simplifier = simplifier = (function createSimplifier() {
   "use strict";
   var counter = 0;
+  //itemEventHandler (and textareaEventHandler?) allows program to prevent duplicate event handlers
+  var itemEventHandler = false;
   function go() {
+    console.log(go.length)
     createItems();
     //act as presenter: pass message and cause model to update its presenter
     base.getItem("Steps tool model").setSomeDataEtc({distanceFromFocus: 1});
@@ -30,7 +33,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       dataEtc: {
         dataType: "html",
         requirements: ["doT.js"],
-        data: '<form {{=it.newAttribute}}> <fieldset data-role="controlgroup" data-type="{{=it.orientation}}" id="{{=it.elementId}}"></fieldset></form>'
+        data: '<form {{=it.newAttribute}}> <fieldset {{=it.newAttribute}} data-role="controlgroup" data-type="{{=it.orientation}}" id="{{=it.elementId}}"></fieldset></form>'
       }
     });
     
@@ -99,8 +102,9 @@ window.simplifier = simplifier = (function createSimplifier() {
           obj[idParts[0]] = num;
           viewMarkup.setSomeDataEtc(obj, this.getLocalId());
         }
-        //the following line must be wrong as it does not use setSomeDataEtc or setDataEtc
+        //the following line must be wrong as it does not use setSomeDataEtc or setDataEtc, USED IN TEXTAREA MARKUP .ON
         here.presenterId = publisher.getLocalId();
+        //EH: TAKE OUT THE FOLLOWING AS IT MULTIPLIES EVENT HANDLERS, LEAVING FOR NOW AS IT CALLS BOTH ITEM MARKUP AND TEXTAREA MARKUP, FIXING ONE AT A TIME
         viewMarkup.getUpdateFromFunction().call(viewMarkup, this);
       }//end of updateFrom
     }); //end view utility
@@ -128,6 +132,15 @@ window.simplifier = simplifier = (function createSimplifier() {
     function presenterUpdateFrom(publisher) {
       var pInfo = publisher.getDataEtc();
       var here = this.getDataEtc(); 
+      
+      
+      var pId = publisher.getLocalId();
+      if (pId == "Instance tool model" || pId == "Instance title model") {
+        console.log('presenter responding to: ' + pId);
+        console.log('elId: ' + here.elementId + ', domEl: ' + $('#' + here.elementId).length);
+      }
+      
+      
       var model = base.getItem(here.modelId);
       var position = model.getDataEtc().position; 
       var listModel = base.getItem(model.getDataEtc().listModelId);
@@ -140,10 +153,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         //this should be model; check distanceFromFocus; 1 means displayable, 0 means selected, 2-5 should be preloaded, -1 == "back"/"undo" history
         if (pInfo.distanceFromFocus === 1 || pInfo.distanceFromFocus === 0) {
         
-          if (here.isDisplayed === true) {
-            //$('#' + here.elementId).show()
-          }
-          else {
+          if (!here.isDisplayed || !$('#' + here.elementId).length) {
           //if (here.isDisplayed === false) {
             //set data and publish, allowing presentation function to display view
             var view = base.getItem(this.getDataEtc().viewId);
@@ -198,7 +208,12 @@ window.simplifier = simplifier = (function createSimplifier() {
       ],
       updateFrom: itemModelUpdateFrom
     });
+    
     function itemModelUpdateFrom(publisher) {
+      var pId = publisher.getLocalId();
+      if (pId == "Instance tool model") {
+        console.log('List model: ' + pId);
+      }
       //publisher is List model
       var listInfo = publisher.getDataEtc();
       var thisInfo = this.getDataEtc();
@@ -235,11 +250,12 @@ window.simplifier = simplifier = (function createSimplifier() {
       },
       updateFrom: function(viewUtility) {
         //publisher is view utility
-        var d = this.getDataEtc(); 
+        //var d = this.getDataEtc(); 
         //console.log('itemview: ' + viewUtility.getLocalId() + ' ' + counter++)
         //console.log('view markup has: Step: ' + d.Step + ', Method: ' + d.Method)
         var self = this;
         //prepare to collect user events and pass them to presenter
+        if (itemEventHandler) return;
         $('input').on("click", function(e) {
           var selectedId = this.id;
           if (selectedId === 'title__Input_1') return;
@@ -273,7 +289,10 @@ window.simplifier = simplifier = (function createSimplifier() {
           presenter = base.getItem(presString);
           presenter.setSomeDataEtc({isSelected: true}, self.getLocalId());
           presenter.getUpdateFromFunction().call(presenter, self);
-        });
+          
+          //prevent multiple event handlers
+          itemEventHandler = true;
+        });//END .ON?
       }
     });
     
@@ -1030,6 +1049,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Hard Words tool model",
       dataEtc: {
         selectedWord: '', //nothing selected yet, because contents to be generated dynamically
+        selectedItem: 0,//index? because presenterupdatefrom has position already? what does instance need?
         distanceFromFocus: 2,
         //parentSelectionRequired: 2,
         standardsReady: false,
@@ -1044,10 +1064,11 @@ window.simplifier = simplifier = (function createSimplifier() {
         "Vocab Level tool model"
       ],
       updateFrom: function(publisher) {
-      var pub = publisher.getDataEtc();
-      //console.log(publisher.getLocalId())
-      var here = this.getDataEtc();
+        var pub = publisher.getDataEtc();
+        var here = this.getDataEtc();
+        //console.log('in hwtm, pub: ' + publisher.getLocalId() + ', selectedWord: ' + here.selectedWord);
         if (pub.isLoaded) {
+        console.log('list3 loader model triggered hard words tool model')
           //Simple word list(s) complete
           //if that's already recorded, nothing more to do
           if (here.standardsReady) return;
@@ -1069,8 +1090,8 @@ window.simplifier = simplifier = (function createSimplifier() {
             return;
           }
           this.setSomeDataEtc({lastChange: pub.timesChanged, text: pub.text}, this.getLocalId());
+          console.log('standardsReady: ' + here.standardsReady)
           if (here.standardsReady) {
-          console.log('got ehre: ' + pub.text)
             analyze(pub.text, this);
           }
         }
@@ -1091,7 +1112,7 @@ window.simplifier = simplifier = (function createSimplifier() {
           var paragraphs = text.split('\n');
           var pText = '', div = [], sentenceLength = 0, currentSentence = [], isFinalizer = false, isFinalDot = false;
           var isBeforeWord = true, isCap = false, prevCap = false, isEasy = false, idCount = 0, sentenceId, obj = {};
-          var hardWords = {}, inputId = '';
+          var hardWords = {}, inputId = '', selWord = '';
           for (var i in paragraphs) {
             pText = paragraphs[i];
             //find first alphabetical characters, case insensitive
@@ -1125,6 +1146,9 @@ window.simplifier = simplifier = (function createSimplifier() {
                 sentenceId = 'input_' + idCount;
                 //if hard word not encountered yet, make a location for it
                 if (!hardWords[div[0]]) {
+                  if (!Object.keys(hardWords).length) {
+                    selWord = div[0];
+                  }
                   hardWords[div[0]] = {};
                   hardWords[div[0]].sentences = {}
                 }
@@ -1173,7 +1197,7 @@ window.simplifier = simplifier = (function createSimplifier() {
             if (base.getItem(inputId)) base.deleteItem(inputId);
             base.createItem({localId: inputId, dataEtc: {tArray: currentSentence}});
           }//end for each paragraph
-          self.setSomeDataEtc({hardWords: hardWords});
+          self.setSomeDataEtc({hardWords: hardWords, selectedWord: selWord});
           /*AN EXAMPLE OF HOW LATER TO OUTPUT FINAL TEXT
           var nextInt = 0;
           var nextItem = base.getItem('input_' + nextInt);
@@ -1214,7 +1238,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     base.createItem({
       localId: "Hard Words title model",
       dataEtc: {
-        text: '2.3 Hard Words',
+        text: '2.3 Hard Word',
         distanceFromFocus: 2,
         listModelId: "Hard Words tool model",
         position: 0
@@ -1288,6 +1312,7 @@ window.simplifier = simplifier = (function createSimplifier() {
           var model = base.getItem("Hard Words tool model");
           var hard = here.hardWordsArray[here.selectedIndex];
           model.setSomeDataEtc({selectedWord: hard}, this.getLocalId());
+          model.getUpdateFromFunction().call(model, this);
         }
         var self = this;
         
@@ -1321,14 +1346,17 @@ window.simplifier = simplifier = (function createSimplifier() {
     base.createItem({
       localId: "Instance tool model",
       dataEtc: {
-        distanceFromFocus: 2,
+        distanceFromFocus: 4,
         selectedItem: 0
       },
       publisherIds: [
         "Hard Words tool model"
       ],
       updateFrom: function(publisher) {
-        this.setSomeDataEtc({distanceFromFocus: publisher.getDataEtc().distanceFromFocus});
+        var pub = publisher.getDataEtc();
+        if (this.getDataEtc().distanceFromFocus != pub.distanceFromFocus && pub.selectedWord) {
+          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus});
+        }
       }
     });//end create Vocab Level tool model
     
@@ -1339,7 +1367,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       dataEtc: {
         elementId: "Instance", 
         orientation: "vertical", 
-        newAttribute: "style='display: inline-block;'",
+        newAttribute: "style='display: inline-block; width: 200px;'",
         modelId: "Instance tool model",
         viewId: "View utility",
         viewMarkupId: "List view markup",
@@ -1392,9 +1420,9 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Instance presenter",
       dataEtc: {
         viewId: "View utility",
-        hardWords: {},
+        hardWord: '',
         sentenceArray: [],
-        selectedIndex: 1,
+        selectedIndex: 0,
         isDisplayed: false
       },
       publisherIds: [
@@ -1405,21 +1433,53 @@ window.simplifier = simplifier = (function createSimplifier() {
         var pub = publisher.getDataEtc(); 
         var here = this.getDataEtc();
         //if publisher is Hard Words tool model, get hard word and look it up in hard words to find sentences; put them in array
-        if (pub.hardWords) {
-          var word = pub.selectedWord; console.log('got here: ' + word)
-          var sentences = pub.hardWords[word];
+        if (pub.hardWords && pub.distanceFromFocus < 2) {
+          var word = pub.selectedWord; 
+          /* if (!word) {
+          console.log('we still need this')
+            for (var w in pub.hardWords) {
+              word = w;
+              //cut loop short after first iteration; like finding [0]--almost
+              break; 
+            }
+          } */
+          //if the selectedWord has not changed in Hard Words tool model, no need to update instances
+          if (word == here.hardWord) {
+            
+        console.log('befor first return, Instance: ' + $('#Instance').length + ', Instance_0: ' + $('#Instance_0').length);
+            console.log('hardWord && selectedWord == hardWord, so first return to do nothing')
+            return;
+          }
+          //else if the selectedWord has changed and instances are displayed for a previous selected word, erase all and start over
+          if (here.hardWord) {
+            console.log('hardWord && selectedWord != hardWord, so remove and second return to rebuild')
+            this.setSomeDataEtc({hardWord: '', isDisplayed: false}, this.getLocalId());
+            $('#Instance_0').closest('form').remove();
+            var model = base.getItem("Instance tool model");
+            model.setSomeDataEtc({selectedItem: 0}, this.getLocalId());
+            return;
+          }
+          //else if there are no instances displayed yet, go ahead and display them.
+            console.log('!hardWord, so build instances')
+          var sentences;
+          if (pub.hardWords[word]) {
+            sentences = pub.hardWords[word].sentences;
+          }
           var sArray = [];
           for (var id in sentences) { 
             sArray.push(id);
           }
-          this.setSomeDataEtc({sentenceArray: sArray});
+          this.setSomeDataEtc({sentenceArray: sArray, hardWord: word}, this.getLocalId());
+          if (!here.isDisplayed && here.selectedIndex) {
+            display(this);
+          }
         }
         else if (pub.dataType == "html") {
         //TODO update for observers
         }
-        else if (publisher.getLocalId() === 'Instance tool model') {
+        else if (publisher.getLocalId() === 'Instance tool model') { 
           if (pub.distanceFromFocus < 2) {
-            display(this);
+            this.setSomeDataEtc({selectedIndex: 1}, this.getLocalId());
           }
           else {
             //title will remove all?
@@ -1429,8 +1489,9 @@ window.simplifier = simplifier = (function createSimplifier() {
         
         function display(self) { 
           var num = 1; 
-          for (var id in self.sentenceArray) {
-            var sentenceItem = base.getItem(id);
+          var sArr = self.getDataEtc().sentenceArray;   
+          for (var i in sArr) {
+            var sentenceItem = base.getItem(sArr[i]);
             var textArray = sentenceItem.getDataEtc().tArray;
             var sentence = textArray.join('');
             //set data and publish to view
