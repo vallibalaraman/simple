@@ -1,0 +1,109 @@
+Simple/Simplifier Requirements
+Drafts: Feb 12, 2013, Feb 20, 2013, Apr 17, 2013
+
+ 1 START (Note: Some introductory requirements are in section 4, allowing 1-3 to match the corresponding elements of the GUI.)
+ 1.1 The first start tool shall be labeled "1.1 Importing method" Or something to that effect. Priority: 1
+ 1.1.1 The first option/item in the "importing method" tool shall be to type or paste text into a textarea. Priority: 1
+ 1.1.1.1 The textarea option shall be selected by default. Priority: 1
+ 1.1.1.2 When the textarea option is selected, a textarea shall be displayed in the second  importing tool (1.2). Priority: 1
+ 1.1.2 The second option shall be to import text from a text file--if this feature is available. Priority: 2
+ 1.1.2.1 If this option is selected for the first time, the user shall be allowed to browse files and select a text file for import. Priority: 2
+ 1.1.2.1.1 If a user has selected  a file, the contents of the file shall be displayed in the second  importing tool (1.2). Priority: 2
+ 1.1.3 The third option and subsequent options shall be available for previously saved projects--if this feature is available. Priority: 3
+ 1.1.3.1 If the project saving feature is available but unused, there will be no third option in the first importing tool, but in its place below the tool shall be a note that says "(No saved projects)" or something to that effect. Priority: 3
+ 1.1.3.2 If there are saved projects, each of these shall have its title displayed as an item in the first tool, starting in third position. Priority: 3
+ 1.1.3.2.1 When a saved project item is selected, its text shall be displayed in the second  importing tool (1.2). Priority: 3
+ 1.2 The second start tool shall be labeled "1.2 The text to simplify" or something to that effect. Priority: 1
+ 1.2.1 The first item in the "text to simplify" tool shall include a check box or some similar device indicating whether or not the program will "remember" the state of the project if/when the window is closed. The word "save" would be ambiguous in this context as the file-saving process is distinct from this remembering. Priority: 3
+ 1.2.1.1 The "remember" option shall be checked by default. Priority: 3
+ 1.2.2 The second item in the "text to simplify" tool shall contain the title and content of the text to be processed, if any. Priority: 1
+ 1.2.2.1 If the method of input is to be typing or pasting in a textarea (1.1.1), this item shall include a text field for the title and a textarea for the content. Priority: 1
+ 1.2.2.2 If the method of input is to be opening a text file, this item shall contain the file name followed by the text of the file--if the size of the file does not impede normal operation of the system. Priority: 2
+ 1.2.2.3 If the method of input is for the system to remember a previous project, the remembered name and text shall be used as defined in 1.2.2.2. Priority: 3
+ 2 SIMPLIFYING
+ 2.1 The first simplification tool shall have the title "2.1 Vocab Goal" or some equivalent title. Priority: 1
+ 2.1.1 The system shall compare submitted text against at least one default list of simple words/phrases to determine which submitted words are too hard. In this context, "list" implies that these words/phrases can be represented as a list, not that it is actually represented that way in the system. Priority: 1
+ 2.1.2 The system shall offer the user five to eight vocabulary levels (lists of simple words labeled according to number of words allowed) and adjust the collection of hard words accordingly. Priority: 2
+ 2.1.3 In addition to the basic five to eight vocabulary levels, the system shall offer options (e.g., check all that apply) for target locales (e.g. Australia, Bahamas, etc.) Priority: 3
+ 2.1.4 When data is fully processed, each Vocab Goal (including both level items and locale options) shall have a number displayed near it, indicating the number of changes that will be required for the document to comply with that goal. Priority: 1
+ 2.1.5 Selecting a Vocab Goal item or option or deselecting an option shall result in the updating of the display of tools of a higher number, allowing the user to see quickly the results of aiming for various levels of vocabulary. Priority: 1
+ 2.2 The second simplification tool shall have the title "2.2 Result Type" or some equivalent title. Priority: 1
+ 2.2.1 The list shall have dividers labeled "Unchecked" and "Checked" or the equivalent. Priority: 1
+ 2.2.1.1 Under "Unchecked", there shall be two items labeled "Low-Risk" and "High-Risk" or the equivalent. "Low-Risk" means results of data that fit into the expectations of the system. "High-Risk" means that something results of data that the system was not fully prepared for. Low-Risk is listed first to give the user a good impression of the results before focusing on the possibly embarrassing "High-Risk" results. Priority: 1
+ 2.2.1.2 Under "Checked", there shall be two items labeled "Successes" and "Exceptions". Successes are changes that the user has approved in which the new word or phrase qualifies as simple according to the selected vocabulary goals (level and locales). Exceptions are the results (changes or non-changes) that the user has approved in which the word or phrase is still outside the limits of the Vocabulary Goals. Having these types allows the user to revisit past decisions. Priority: 1
+ 2.2.2 Selecting a Result Type item shall result in the updating of the display of tools of a higher number, allowing the user to focus first on a few Low-Risk results for a good impression, then to focus on High-Risk results for priority validation, then to review more Low-Risk results, double-check Exceptions, and double-check or admire Successes as time allows. Priority: 1
+ 2.2.3 When the data is fully processed, the system shall display next to each of the four items a number indicating how many results are in each type or section based on the selected Vocabulary Goals. Priority: 2
+ 2.2.3.1 After that, those numbers shall be updated each time the user approves a result. Priority: 2
+ 2.2.3.2 If a user approves a default replacement in a High-Risk word or phrase, all results related to that original word or phrase shall be moved to the Low-Risk type/category with the default replacement applied. Priority: 3
+ 2.3 The third simplification tool shall have the title "2.3 Hard Word" or some equivalent title. Priority: 1
+ 2.3.1 The items in this list shall consist of words or phrases in the submitted text that are too difficult according to the selected Vocabulary Goals and categorized as belonging to the selected Result Type. Priority: 1
+ 2.3.2 Selecting a Hard Word item shall result in the updating of the display of tools of a higher number, allowing the user to focus on one hard word or phrase at a time. Priority: 1
+ 2.3.3 When the user imports text, and simplifying tools are automatically displayed, the system shall find the first four hard words, if that many exist, and make these and their associated results available for the user to work with before processing the rest of the original text. This is to avoid delays for the user. Priority: 1 
+ 2.3.3.1 The display shall be updated with all currently processed data when the user selects any of the instructions. Priority: 2
+ 2.3.3.1.1 If the user selects the first or third main instruction (see 1.1) and the data has not been fully displayed, the system shall inform the user that the data is still being processed and suggest that the reader return to step 2. Priority: 2
+ 2.3.3.2 The display shall be updated with all currently processed data when the user has selected every available hard word. Priority: 2
+ 2.3.3.3 The display shall be updated when all data has been processed.  Priority: 1
+ 2.3.4 If the Hard Word list is longer than can be viewed on the screen, the GUI shall provide above it a filter text-input bar, and the system shall use input text from that bar to reduce the number of displayed items so that the user can quickly find a certain word, especially one that may be brought to mind by the text in 2.4 Sentence/Instance or 2.5 Old Context. Priority: 2
+ 2.4 The fourth simplification tool shall have the title "2.4 Sentence" or "2.4 Instance" or some equivalent title. Priority: 1
+ 2.4.1 Each item in this list shall consist of a sentence in which the selected Hard Word occurs in the original text. Priority: 1
+ 2.4.2 Selecting a Sentence/Instance item shall result in the updating of the display of tools of a higher number, allowing the user to focus on one sentence at a time. Priority: 1
+ 2.5 The fifth simplification tool shall have the title "2.5 Part of Speech" or "2.5 Sense" or some equivalent title. Priority: 1
+ 2.5.1 The primary items in this list shall include "Noun", "Adjective", "Verb", "Adverb", and "Other". Priority: 1
+ 2.5.2 The secondary items in this list shall include senses within each part of speech. Priority: 3
+ 2.5.3 Selecting an item shall result in the updating of higher numbered lists (2.6 and 2.7) as needed. Priority: 3
+ 2.6 The sixth simplification tool shall have the title "2.6 Easier Word/Phrase" or "2.6 Replacement" or some equivalent title. Priority: 1
+ 2.6.1 The first items in this list shall consist of a selection of simple synonyms (words  or phrases) that can be replacements for the selected hard word or phrase, and each of these items shall have its associated level and locale listed with it. Priority: 2
+ 2.6.1.1 The Easier Word/Phrase items shall have the same inflection as the original word so that they can be automatically reinserted into the sentence in the place of the hard word or phrase. Priority: 3
+ 2.6.1.2 When the user selects a replacement word or phrase, the system shall use that to create or update a simplified draft text and thus update 2.7 Result. Priority: 3
+ 2.6.2 The system shall provide a place for the user to enter and submit an easier word as replacement for the hard word in focus (see 3.3). Priority: 1
+ 2.6.2.1 When the user submits a replacement word or phrase, the system shall use that to create or update a simplified draft text and thus update 2.7 Result. Priority: 1
+ 2.6.2.2 The system shall store the user-submitted word and offer it as an alternative replacement for other instances of the hard word in focus. Priority: 2
+ 2.6.3 Underneath or above the Easier Word/Phrase list, the GUI shall provide a "set as default" option, though not necessarily with those exact words. Priority: 3
+ 2.6.3.1 The "set as default" option shall be selected by default. Priority: 3
+ 2.6.3.2 If the "set as default" option is selected when a change is approved in 2.7, the system shall associate the selected Easier Word/Phrase with the selected Hard Word and update any Unchecked results accordingly. Priority: 3
+ 2.6.3.2.1 If an Easier Word/Phrase is set as default for a High-Risk Hard Word, the system shall recategorize that Hard Word and all associated instances as Low-Risk. Priority: 3
+ 2.7 The seventh and final simplification tool shall have the title "Result" or some equivalent title. Priority: 1
+ 2.7.1 There shall be three items in this list. The middle one shall be the selected sentence. The first item shall be the sentence that precedes the selected sentence in the new draft text. The third item shall be the sentence that follows the selected sentence in the new draft text. Priority: 1
+ 2.7.2 The system shall allow the user to optionally view higher or lower sentences. Priority: 3
+ 2.7.3 Underneath or above the Result list, the GUI shall provide an "approve" option, though not necessarily with that exact word. Priority: 1
+ 2.7.3.1 The "approve" option shall not be selected by default. Priority: 1
+ 2.7.3.2 If the user selects the "approve" option, the system shall recategorize the current results under Checked as either one of the Successes or the Exceptions. Priority: 1
+ 3 EXITING (see points under 1.2)
+ 3.1 The first exit tool shall have "3.1 Status: " as the first part of its label, but the rest of the label shall depend on the application state. Priority: 1
+ 3.1.1 If there are unprocessed results, the label shall warn the user that it is still processing and recommend returning to Step 2. Priority: 1
+ 3.1.2 If the results are processed but there are unchecked results, the label shall warn the user that some results are unchecked. Priority: 1
+ 3.1.3 If there are unchecked results, the first selectable item in the Status tool shall say "Keep checked replacements only" or something to that effect. Priority: 1
+ 3.1.3.1 If the user chooses to keep checked replacements only, the output in the second exit tool shall reflect that choice. Priority: 1
+ 3.1.4 If there are unchecked results, the second selectable item in the Status tool shall say "Keep both checked and unchecked replacements" or something to that effect. Priority: 1
+ 3.1.4.1 If the user chooses to keep both checked and unchecked replacements, the output in the second exit tool shall reflect that choice. Priority: 1
+ 3.1.5 If the results are all checked, the status label shall congratulate the user on completing the task. Priority: 1
+ 3.1.6 If there are no unchecked results, there shall be no selectable list items under the status label. Priority: 1
+ 3.1.7 Regardless of the status, under the status tool shall be a check box or some similar device allowing the user to choose whether or not the system should remembering/saving the application state, in order to resume after closing and restarting the application--if this feature is available. Priority: 3
+ 3.1.7.1 The default state of 3.1.7 shall match the corresponding state of 1.2.1. Priority: 3
+ 3.1.7.2 If the project state is saved/remembered and the option to remember is selected,  there shall be a notice underneath the option stating that the saving/remembering was successful. Priority: 3
+ 3.2 The second exit tool shall be labeled "1.2 The simplified text" or something to that effect. Priority: 1
+ 3.2.1 The first item in the "simplfied text" tool shall include a check box or some similar device indicating whether or not the program should save the output to a file--if this feature is available. Priority: 2
+ 3.2.1.1 The save to file option shall be unchecked by default. Priority: 2
+ 3.2.1.2 If the save to file option is selected, the user should be allowed to browse to a folder and save. Priority: 2
+ 3.2.1.3 If the save to file action is successful, the option shall remain checked and a success notice shall appear beneath it. Priority: 2
+ 3.2.2 The second item in the "text to simplify" tool shall contain the title and content of the output text, if possible. Priority: 1
+ 3.2.2.1 The title shall be in a text field so that it can be modified by the user. Priority: 2
+ 3.2.2.1.1 The default title shall be a slight modification of the name of the original if the original is from a file, or the same as the original if it did not come from a file. Priority: 2
+ 3.2.2.1.2 The default title shall be used in the save to file dialog. Priority: 2
+ 3.2.2.2 Below the title field shall be the output text, if such exists and if it is not so large as to interfere with the normal functioning of the system. Priority: 1
+ 3.2.2.3 If the method of input is to be opening a text file, this item shall contain the file name followed by the text of the file--if the size of the file does not impede normal operation of the system. Priority: 2
+ 4 GENERAL REQUIREMENTS
+ 4.1 Tools in the GUI shall consist of lists that exhibit "inline-block" behavior (fitting as many as possible in a window but lining up one under the other in the case of a small window) so as to adapt to various screen/window sizes. Priority: 1
+ 4.2 Every page/view of the GUI shall provide at least the following three numbered main instructions or steps: 1) Start, 2) Simplify, and 3) Finish (not necessarily in those words). Priority: 1
+ 4.2.1 Step 1 (Start) shall be visually different than the other instructions at the beginning, indicating current focus. Priority: 1
+ 4.2.2 The system shall allow the user to shift focus manually to any of the three steps. Priority: 1
+ 4.2.3 Whenever focus shifts (whether manually or automatically) to a new step, the new current step shall be visually different than the other two steps. Priority: 1
+ 4.2.4 The current step shall determine some of the other elements on the screen. Priority: 1
+ 4.2.4.1 If and only if the focus is on the Step 1, the screen should hold one or more tools for importing text and possibly recovering an earlier project. Priority: 1
+ 4.2.4.2 If and only if the focus is on the Step 2, the screen should hold tools for simplifying text. Priority: 1
+ 4.2.4.3 If and only if the focus is on Step 3, the screen should hold one or more tools for exporting text and possibly saving project state. Priority: 1
+ 4.3 There should be three main colors for the lists/tools: one for titles (and possibly other non-selectable items), one for unselected items, and one for selected items. Priority: 1
+ 4.4 If a list or collection of options is too long, scroll bars shall be used to keep all content small enough for a typical desktop or notebook screen. This is to prevent a long list effectively hiding the options below it and also to make the whole program more usable in a mobile environment. Priority: 2
+ 4.5 On a typical notebook or desktop screen, all simplification tools must be at least partly visible when the second main instruction is selected and the web page scroll bar is in its highest position. On mobile screens this is likely to be impossible. Priority: 1
+
+

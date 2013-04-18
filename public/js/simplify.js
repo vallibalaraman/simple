@@ -3,8 +3,10 @@
 window.simplifier = simplifier = (function createSimplifier() {
   "use strict";
   var counter = 0;
-  //itemEventHandler (and textareaEventHandler?) allows program to prevent duplicate event handlers
+  var currentStep = 1;
+  //itemEventHandler etc. allows program to prevent duplicate event handlers
   var itemEventHandler = false;
+  var inputEventHandler = false;
   function go() {
     createItems();
     //act as presenter: pass message and cause model to update its presenter
@@ -43,7 +45,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         dataType: "function",
         requirements: ["jQuery", "jQueryMobile", "doT.js"]
       },//end of dataEtc
-      updateFrom: function updateFrom(publisher) {
+      updateFrom: function updateFrom(publisher) { 
         var presenter = publisher; 
         //console.log('view: ' + publisher.getLocalId() + ' ' + counter++)
         //get view markup here as set by presenter
@@ -103,7 +105,6 @@ window.simplifier = simplifier = (function createSimplifier() {
         }
         //the following line must be wrong as it does not use setSomeDataEtc or setDataEtc, USED IN TEXTAREA MARKUP .ON
         here.presenterId = publisher.getLocalId();
-        //EH: TAKE OUT THE FOLLOWING AS IT MULTIPLIES EVENT HANDLERS, LEAVING FOR NOW AS IT CALLS BOTH ITEM MARKUP AND TEXTAREA MARKUP, FIXING ONE AT A TIME
         viewMarkup.getUpdateFromFunction().call(viewMarkup, this);
       }//end of updateFrom
     }); //end view utility
@@ -152,18 +153,17 @@ window.simplifier = simplifier = (function createSimplifier() {
             view.setSomeDataEtc({data: here}, this.getLocalId());
             view.getUpdateFromFunction().call(view, this);
             this.setSomeDataEtc({isDisplayed: true});
-          }
+          } 
           //is the following really needed? it seems to check list model
           if (listModel.getDataEtc().selectedItem && position !== listModel.getDataEtc().selectedItem) {
             this.setSomeDataEtc({isSelected: false}, this.getLocalId());
           }
-        }
+        } /* the following may be needed for a larger application, but this one is simple and bounded, so leave it out
         else {
-          //model is not displayable, so remove (is this overkill by making every item in list try to kill it's form when only one needs to?)
-          //$('#' + here.elementId).hide()
-          $('#' + here.elementId).closest('form').remove()
-          this.setSomeDataEtc({isDisplayed: false}, this.getLocalId());
-        }
+          //model is not displayable, so remove 
+          //$('#' + here.elementId).closest('form').remove()
+          //this.setSomeDataEtc({isDisplayed: false}, this.getLocalId());
+        } */
       }    
       //check if it's view
       else if (publisher.getLocalId() == here.viewMarkupId) {
@@ -234,7 +234,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         data: '<input type="button" data-role="button" data-theme="a" {{=it.newAttribute}} id="{{=it.elementId}}" value="{{=it.text}}" />'
         //lists and their lengths will be inserted here by view utility
       },
-      updateFrom: function(viewUtility) {
+      updateFrom: function(viewUtility) { 
         //publisher is view utility
         //var d = this.getDataEtc(); 
         //console.log('itemview: ' + viewUtility.getLocalId() + ' ' + counter++)
@@ -242,9 +242,50 @@ window.simplifier = simplifier = (function createSimplifier() {
         var self = this;
         //prepare to collect user events and pass them to presenter
         if (itemEventHandler) return;
-        $('input').on("click", function(e) {
+        //prevent multiple event handlers
+        itemEventHandler = true;
+        $('body').on("click", 'input', function(e) {
           var selectedId = this.id;
           if (selectedId === 'title__Input_1') return;
+          if (selectedId === 'replacement_input') return;
+          //Req. 4.2.2, Req. 4.2.4 If one of the main step buttons are clicked, hide unneeded tools and show needed tools
+          //Req. 4.2.4.1 If user clicks Step 1 and is not already there, hide Step 2 and Step 3 tools and show Step 1 tools.
+          if (selectedId === 'Step_1') {
+            if (currentStep != 1) {
+              currentStep = 1;
+              $('#Level').closest('form').hide();
+              $('#Hard').closest('form').hide();
+              $('#Instance').closest('form').hide();
+              $('#Replacement').closest('form').hide();
+              $('#Method').closest('form').show();
+              $('#Input').closest('form').show();
+            }
+          }
+          //Req. 4.2.4.2 If user clicks Step 2 and is not already there, hide Step 1 and Step 3 tools and show Step 2 tools.
+          if (selectedId === 'Step_2') {
+            if (currentStep != 2) {
+              currentStep = 2;
+              $('#Method').closest('form').hide();
+              $('#Input').closest('form').hide();
+              $('#Level').closest('form').show();
+              $('#Hard').closest('form').show();
+              $('#Instance').closest('form').show();
+              $('#Replacement').closest('form').show();
+            }
+          }
+          //Req. 4.2.4.3 If user clicks Step 3 and is not already there, hide Step 2 and Step 1 tools and show Step 3 tools.
+          if (selectedId === 'Step_3') {
+            if (currentStep != 3) {
+              currentStep = 3;
+              $('#Level').closest('form').hide();
+              $('#Hard').closest('form').hide();
+              $('#Instance').closest('form').hide();
+              $('#Replacement').closest('form').hide();
+              $('#Method').closest('form').hide();
+              $('#Input').closest('form').hide();
+            }
+          }
+          
           var idArray = selectedId.split('_');
           var selectedInt = idArray[1];
           var idStarter = "#" + idArray[0];
@@ -270,15 +311,18 @@ window.simplifier = simplifier = (function createSimplifier() {
             presenter.getUpdateFromFunction().call(presenter, self);
             return;
           }
-          //try to recreate what presenter is based on convention (known bug)
+          //try to recreate what presenter is based on convention
           var presString = idArray[0] + ' ' + selectedInt + " presenter";
+          if (idArray[0] == "Instance" || idArray[0] == "Replacement") {
+            presString = idArray[0] + ' presenter';
+          }
           presenter = base.getItem(presString);
           presenter.setSomeDataEtc({isSelected: true}, self.getLocalId());
           presenter.getUpdateFromFunction().call(presenter, self);
           
-          //prevent multiple event handlers
-          itemEventHandler = true;
+          
         });//END .ON?
+        
       }
     });
     
@@ -1052,7 +1096,6 @@ window.simplifier = simplifier = (function createSimplifier() {
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc();
         var here = this.getDataEtc();
-        //console.log('in hwtm, pub: ' + publisher.getLocalId() + ', selectedWord: ' + here.selectedWord);
         if (pub.isLoaded) {
           //Simple word list(s) complete
           //if that's already recorded, nothing more to do
@@ -1180,7 +1223,7 @@ window.simplifier = simplifier = (function createSimplifier() {
             inputId = 'input_' + idCount++;
             if (base.getItem(inputId)) base.deleteItem(inputId);
             base.createItem({localId: inputId, dataEtc: {tArray: currentSentence}});
-          }//end for each paragraph
+          }//end for each paragraph 
           self.setSomeDataEtc({hardWords: hardWords, selectedWord: selWord});
           /*AN EXAMPLE OF HOW LATER TO OUTPUT FINAL TEXT
           var nextInt = 0;
@@ -1369,7 +1412,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     base.createItem({
       localId: "Instance title model",
       dataEtc: {
-        text: '2.4 Instance',
+        text: '2.4 Sentence',
         distanceFromFocus: 2,
         listModelId: "Instance tool model",
         position: 0
@@ -1478,6 +1521,237 @@ window.simplifier = simplifier = (function createSimplifier() {
             var selection = (num === 1) ? true : false;
             var elementId = 'Instance_' + num;
             var thisData = {text: sentence, position: num, isSelected: selection, parentId: 'Instance', elementId: elementId, 
+              viewMarkupId: "Item view markup", newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
+            view.setSomeDataEtc({data: thisData}, self.getLocalId());
+            view.getUpdateFromFunction().call(view, self);
+            num++;
+          }
+          self.setSomeDataEtc({isDisplayed: true});
+        }//end display()
+        
+      }//end updateFrom
+    });//end create presenter
+    
+    //Req. 2.6
+    //Create Replacement tool model
+    base.createItem({
+      localId: "Replacement tool model",
+      dataEtc: {
+        distanceFromFocus: 4,
+        selectedItem: 0
+      },
+      publisherIds: [
+        "Hard Words tool model"
+      ],
+      updateFrom: function(publisher) {
+        var pub = publisher.getDataEtc();
+        if (this.getDataEtc().distanceFromFocus != pub.distanceFromFocus && pub.selectedWord) {
+          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus});
+        }
+      }
+    });//end create tool model
+    
+    
+    //Create 2.6 Replacement tool presenter  
+    base.createItem({
+      localId: "Replacement tool presenter",
+      dataEtc: {
+        elementId: "Replacement", 
+        orientation: "vertical", 
+        newAttribute: "style='display: inline-block; width: 200px;'",
+        modelId: "Replacement tool model",
+        viewId: "View utility",
+        viewMarkupId: "List view markup",
+        parentId: "page",
+        selectedItem: 0,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Replacement tool model"
+      ],
+      updateFrom: presenterUpdateFrom
+    });
+    
+    //Create Replacement title model
+    base.createItem({
+      localId: "Replacement title model",
+      dataEtc: {
+        text: '2.6 Replacement',
+        distanceFromFocus: 2,
+        listModelId: "Replacement tool model",
+        position: 0
+      },
+      publisherIds: [
+        "Replacement tool model"
+      ],
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    base.createItem({
+      localId: "Replacement title presenter",
+      dataEtc: {
+        elementId: "Replacement_0", 
+        modelId: "Replacement title model",
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        newAttribute: "disabled='disabled'",
+        parentId: "Replacement",
+        isSelected: false,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Replacement title model"
+      ],
+      updateFrom: presenterUpdateFrom
+    });//end create presenter
+    
+    //Create Replacement input model
+    base.createItem({
+      localId: "Replacement input model",
+      dataEtc: {
+        text: '2.4 Replacement',
+        distanceFromFocus: 2,
+        listModelId: "Replacement tool model",
+        position: 0
+      },
+      publisherIds: [
+        "Replacement tool model"
+      ],
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    //the input view markup for input items
+    base.createItem({
+      localId: "Input view markup",
+      dataEtc: {
+        dataType: "html",
+        requirements: ["doT.js"],
+        data: '<div data-theme="b" style="border: 0;" data-shadow="false" {{=it.newAttribute}} id="{{=it.elementId}}"  ><input type="text" id="replacement_input" value="" /></div>' 
+      },
+      updateFrom: function(viewUtility) {
+        //publisher is view utility
+        //var d = this.getDataEtc(); 
+        //console.log('itemview: ' + viewUtility.getLocalId() + ' ' + counter++)
+        //console.log('view markup has: Step: ' + d.Step + ', Method: ' + d.Method)
+        var self = this;
+        //prepare to collect user events and pass them to presenter
+        if (inputEventHandler) return;
+        $('#replacement_input').closest('span').attr('id', 'replacer_span');
+        $('#replacer_span').keypress(function (evt) {
+          //Deterime where our character code is coming from within the event
+          var charCode = evt.charCode || evt.keyCode;
+          if (charCode  == 13) { //Enter key's keycode
+          //without this, cpu crashes, at least in chrome 26
+          evt.preventDefault()
+          $('#replacement_input').trigger('change');
+          }
+        });
+        $('#replacement_input').on("change", function(e) {
+          e.preventDefault();
+          //console.log('changed to: ' + $('#replacement_input').val());
+          
+          
+        });//END .ON?
+        //prevent multiple event handlers
+          inputEventHandler = true;
+      }
+    });
+    
+    base.createItem({
+      localId: "Replacement input presenter",
+      dataEtc: {
+        elementId: "Replacement_1", 
+        modelId: "Replacement input model",
+        viewId: "View utility",
+        viewMarkupId: "Input view markup",
+        newAttribute: "disabled='disabled'",
+        parentId: "Replacement",
+        isSelected: false,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Replacement input model"
+      ],
+      updateFrom: presenterUpdateFrom
+    });//end create presenter
+     
+    
+    //create presenter for auto-generated model data regarding sentences/Replacements
+    base.createItem({
+      localId: "Replacement presenter",
+      dataEtc: {
+        viewId: "View utility",
+        hardWord: '',
+        replacementArray: [],
+        selectedIndex: 0,
+        lastAjax: 0,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Hard Words tool model",
+        "Replacement tool model"
+      ],
+      updateFrom: function(publisher) {
+        var pub = publisher.getDataEtc(); 
+        var here = this.getDataEtc();
+        //if pub.lastChange is not momentarily undefined and it's different, do another ajax and sync the number
+        if (pub.lastChange && pub.lastChange != here.lastAjax) {
+          this.setSomeDataEtc({lastAjax: pub.lastChange}, this.getLocalId());
+          $.ajax({
+            url: "http://mc.superstring.org:8805/2/getsyns.php?q=word",
+            cache: false
+          }).done(function( html ) {
+            console.log(html);
+          });
+        } else {
+        }
+        //if publisher is Hard Words tool model, get hard word and look it up in hard words to find replacements
+        if (pub.hardWords && pub.distanceFromFocus < 2) {
+          var word = pub.selectedWord; 
+          if (word == here.hardWord) {
+            return;
+          }
+          //else if the selectedWord has changed and replacements are displayed for a previous selected word, erase all and start over
+          if (here.hardWord) {
+            this.setSomeDataEtc({hardWord: '', isDisplayed: false}, this.getLocalId());
+            $('#Replacement_0').closest('form').remove();
+            var model = base.getItem("Replacement tool model");
+            model.setSomeDataEtc({selectedItem: 0}, this.getLocalId());
+            return;
+          }
+          //else there are no replacements displayed yet, so go ahead and display them.
+          var r1 = word + ' first';
+          var r2 = word + ' second';
+          var sArray = [r1, r2];
+          this.setSomeDataEtc({replacementArray: sArray, hardWord: word}, this.getLocalId());
+          if (!here.isDisplayed && here.selectedIndex) {
+            display(this);
+          }
+        }
+        else if (pub.dataType == "html") {
+        //TODO update for observers
+        }
+        else if (publisher.getLocalId() === 'Replacement tool model') { 
+          if (pub.distanceFromFocus < 2) {
+            this.setSomeDataEtc({selectedIndex: 1}, this.getLocalId());
+          }
+          else {
+            //title will remove all?
+          }
+        }
+        var self = this;
+        
+        function display(self) { 
+          var num = 2; 
+          var sArr = self.getDataEtc().replacementArray; 
+          //var sArr = ["first", "second"];
+          for (var i in sArr) {
+            var sentence = sArr[i];
+            //set data and publish to view
+            var view = base.getItem(self.getDataEtc().viewId);
+            var selection = (num === 2) ? true : false;
+            var elementId = 'Replacement_' + num;
+            var thisData = {text: sentence, position: num, isSelected: selection, parentId: 'Replacement', elementId: elementId, 
               viewMarkupId: "Item view markup", newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
             view.setSomeDataEtc({data: thisData}, self.getLocalId());
             view.getUpdateFromFunction().call(view, self);
