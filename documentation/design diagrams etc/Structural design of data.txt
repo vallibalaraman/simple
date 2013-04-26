@@ -1,0 +1,28 @@
+STRUCTURAL DESIGN OF DATA
+Note the role of quotation marks in defining some keys as string literals (one per instance), as opposed to variables (may be many per instance).
+Variable keys have no siblings in this document, and leaf node values are JavaScript primitives, and other node values are containers.
+This document was not done before all coding, but it was done before the sprint that coded most of this structure.
+
+level: object (max of 6 levels)
+  type: object (4 types)
+    hardWord: object
+      "definitions": object
+        partOfSpeech: definition (string)
+      "defaults": object
+        partOfSpeech: suggestion (string)
+      "sentences": object
+        sentenceId: object (sentenceId can be inputSentenceId or outputSentenceId)
+          textArrayIndex: object (this and contents can best be added in Analyzer if needed since a hard word may be found more than once in a sentence)
+            "replacement": suggestion (string)
+            "partOfSpeech": string
+      "suggestions": object
+        partOfSpeech: array
+          number: object
+            "suggestion": string
+            "level": number
+inputSentenceId: object
+  "textArray": array
+    number: string
+outputSentenceId: object
+  "textArray": array
+    number: string

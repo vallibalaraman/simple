@@ -259,16 +259,55 @@ Create Item 2.3 Hard Word
 Create Item 2.4 Sentence
 
 
-Create Item 2.5 Old Context
+Create Item 2.5 Part of Speech
 
 
-Create Item 2.6
+//Create Item 2.6 Replacement
+//Change title to "2.6 Replacement (Level, P.o.S.)" to function as column headings
 
 
-Create Item 2.7
+
+//When user clicks on a part-of-speech, use that to replace the existing part-of-speech for that word
+
+//Req. 2.6.1.2, Req. 2.6.2 Copy the selected word, but not pos/level into the text field
+//Req. 2.6.2.1 Use the selected word to populate the replacement field for the hardWord-sentence combo
+
+//Loop through the words in the sentence (if hard, using replacements where they exist), and use them to create an output sentence.
+//Also, if user changes whole sentence, save it as an output sentence, but don't add it to checked category; Check it for hard words and add those to unchecked.
+//For Output, loop through sentences, and for each, check for a parallel output sentence
+//Place a "default for [hardWordX]" checkbox next to the text field
+//Req. 2.6.3.1 Keep a default field for each hard word (with sentences and suggestions), and check it before using replacement
+
+//Add original word with level as (last?) replacement suggestion.
+//for each suggested word, get level.
+//sort suggested words by (in increasing priority): level, PoS, default
+//When part-of-speech is known, use that to order the suggestions
+//Use level to order the suggestions within part-of-speech (PoS has priority over level, so do level first)
+
+//Req. 2.2 in each level container, keep four containers of hard words: uncheckedHighRisk, uncheckedLowRisk, checkedSuccesses, checkedExceptions
+//Req. 2.1, Req. 2.2 the collection of four containers referenced in Type will be only one of the fours/levels/collections referenced in Level
+//Req. 2.2, Req. 2.3 the container of hard words referenced in hard words tool will be only one of the containers referenced in Type
+//Req. 2.3, Req. 2.4 the sentence referenced in sentence will be only one of the sentences referenced in hard words
+
+//level object can keep a collection of hard word collections for each level, with lower levels only including what's not in higher levels
+//level object can keep a record of selected levels (lower level selection implies higher level also selected)
+//type object can keep a reference to the selected level(s)
+//hard words object can 
+
+// 2.6.1 Most of the items in this list shall be simple synonyms (words  or phrases) that can be replacements for the selected hard word or phrase, and each of these items shall have its associated level (and possibly locale and/or part of speech) listed with it. Priority: 2
+// 2.6.1.1 Whenever it is feasible, the Easier Word/Phrase items shall have the same inflection as the original word so that they can be automatically reinserted into the sentence in the place of the hard word or phrase. Priority: 3
+// 2.6.1.2 When the user selects a replacement word or phrase, the system shall use that to create or update a simplified draft text and thus update 2.7 Result. Priority: 3
+// 2.6.2 The system shall provide a place for the user to enter and submit an easier word as replacement for the hard word in focus (see 3.3). Priority: 1
+// 2.6.2.1 When the user submits a replacement word or phrase, the system shall use that to create or update a simplified draft text and thus update 2.7 Result. Priority: 1
+// 2.6.2.2 The system shall store the user-submitted word and offer it as an alternative replacement for other instances of the hard word in focus. Priority: 2
+// 2.6.3 Underneath or above the Easier Word/Phrase list, the GUI shall provide a "set as default" option, though not necessarily with those exact words. Priority: 3
+// 2.6.3.1 The "set as default" option shall be selected by default. Priority: 3
+// 2.6.3.2 If the "set as default" option is selected when a change is approved in 2.7, the system shall associate the selected Easier Word/Phrase with the selected Hard Word and update any Unchecked results accordingly. Priority: 3
+// 2.6.3.2.1 If an Easier Word/Phrase is set as default for a High-Risk Hard Word, the system shall recategorize that Hard Word and all associated instances as 
+
+Create Item 2.7 Result
 
 
-Create Item 2.8
 
 
 Create Item 3.1
@@ -281,6 +320,7 @@ Create Item 1.1
 
 
 //Req. 4.2.2, Req. 4.2.4 If one of the main step buttons are clicked, hide unneeded tools and show needed tools
+//Req. 4.2.2 If user goes back to Step 1 and actually changes input, remove all and start completely from scratch
 //Req. 4.2.4.1 If user clicks Step 1 and is not already there, hide Step 2 and Step 3 tools and show Step 1 tools.
 //Req. 4.2.4.2 If user clicks Step 2 and is not already there, hide Step 1 and Step 3 tools and show Step 2 tools.
 //Req. 4.2.4.3 If user clicks Step 3 and is not already there, hide Step 2 and Step 1 tools and show Step 3 tools.

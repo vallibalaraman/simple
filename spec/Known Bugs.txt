@@ -23,3 +23,6 @@ The following notes indicate known bugs:
 //TODO add affixes here, trying again to make it easy if it presently fails the isEasy test (e.g. 'undo', because do is in list and un- is easy)
 
 1.2 "The text to simplify" tool GUI--the blue does not connect visually to the gray the way it should.
+
+This program is not going to highlight words that can be easy or hard depending on the sense.
+For example, the word "over" is in the easy list, but if you use it in the specialized Cricket sporting sense (e.g. "after fifteen overs"), it won't be easy to some readers.

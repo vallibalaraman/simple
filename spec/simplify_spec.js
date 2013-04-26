@@ -590,4 +590,24 @@ describe("base", function () {
   });
 });
 describe("simplifier", function () {
+describe("test", function () {
+    it("works", function() {
+      var item1 = base.createItem("First");
+      var item2 = base.createItem({
+        dataEtc: {attributeNotToBeTouched: "Second"},
+        publisherIds: ["First"],
+        updateFrom: function(publisher) {
+          this.setSomeDataEtc(publisher.getDataEtc());
+        }
+      });
+      item1.setSomeDataEtc({attributeToBeCopied: "First the sequel"});
+      var shouldBeFirst = item2.getDataEtc().data;
+      var shouldBeSecond = item2.getDataEtc().attributeNotToBeTouched;
+      var shouldBeFirstTheSequel = item2.getDataEtc().attributeToBeCopied;
+      //console.log("shouldBeFirst " + shouldBeFirst + ", shouldBeSecond " + shouldBeSecond + ", shouldBeFirstTheSequel " + shouldBeFirstTheSequel);
+      assert(shouldBeFirst === "First");
+      assert(shouldBeSecond === "Second");
+      assert(shouldBeFirstTheSequel === "First the sequel");
+    });
+  });
 });

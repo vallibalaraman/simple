@@ -4,24 +4,19 @@ window.simplifier = simplifier = (function createSimplifier() {
   "use strict";
   var counter = 0;
   var currentStep = 1;
-  //the following variables allow program to prevent duplicates
+  //itemEventHandler etc. allows program to prevent duplicate event handlers
   var itemEventHandler = false;
   var inputEventHandler = false;
+  // template variables allows program to prevent duplicate templates.
   var itemTemplate = '';
   var listTemplate = '';
-  var textSentToWorker = false;
-  var worker = '';
-  //for testing:
-  var result;
   function go() {
     createItems();
     //act as presenter: pass message and cause model to update its presenter
     base.getItem("Steps tool model").setSomeDataEtc({distanceFromFocus: 1});
     $('#page').trigger('create');
   }
-  function refresh() {
-    $('#page').trigger('create');
-  }
+
 
   function createItems() {
   
@@ -84,35 +79,24 @@ window.simplifier = simplifier = (function createSimplifier() {
         //insert model data into viewMarkup template and display
         $('#' + here.parentId).append(template(here));
         // removed $('#page').trigger('create'); because major slow-down. Moved it to end of input's on.('click') and also go().
-        //$('#page').trigger('create');
-        
         if (here.elementId == "Step") { 
           $('#page').append('<br>');
-        }
-        //modify what's been appended
-        
+        } 
         var id = here.elementId
         var elId = "#" + id;
-        
+        var iconString = 'arrow-d';
+        var themeChar = 'b'
+        if (here.isSelected === false) {
+          iconString = null;
+          themeChar = 'c';
+        }
         var idParts = id.split('_');
         //check if list item; if so, apply markup. If list holder (i.e. fieldset), do nothing.
         if (elId.indexOf('_') !== -1 ) {
           //for non-titles:
-          if (idParts[1] > 0 && idParts[0] != "Input") {
-            var iconString = 'arrow-r';
-            var iconPosition = 'right';
-            if (idParts[0] == "Step") { 
-              iconString = 'arrow-d';
-              iconPosition = 'bottom';
-            } 
-            var themeChar = 'b'
-            if (here.isSelected === false) {
-              iconString = null;
-              themeChar = 'c';
-              iconPosition = 'right';
-            }
+          if (idParts[1] > 0) {
             //apply theme color without rounding corners too much
-            $(elId).buttonMarkup({theme: themeChar, corners: false, icon: iconString, iconpos: iconPosition});
+            $(elId).buttonMarkup({theme: themeChar, corners: false});
           }
           
           if (elId === "#Input_0") {
@@ -294,11 +278,9 @@ window.simplifier = simplifier = (function createSimplifier() {
           if (selectedId === 'Step_1') {
             if (currentStep != 1) {
               currentStep = 1;
-              $('#Vocab').closest('form').hide();
-              $('#Type').closest('form').hide();
+              $('#Level').closest('form').hide();
               $('#Hard').closest('form').hide();
               $('#Instance').closest('form').hide();
-              $('#PoS').closest('form').hide();
               $('#Replacement').closest('form').hide();
               $('#Method').closest('form').show();
               $('#Input').closest('form').show();
@@ -310,11 +292,9 @@ window.simplifier = simplifier = (function createSimplifier() {
               currentStep = 2;
               $('#Method').closest('form').hide();
               $('#Input').closest('form').hide();
-              $('#Vocab').closest('form').show();
-              $('#Type').closest('form').show();
+              $('#Level').closest('form').show();
               $('#Hard').closest('form').show();
               $('#Instance').closest('form').show();
-              $('#PoS').closest('form').show();
               $('#Replacement').closest('form').show();
             }
           }
@@ -322,11 +302,9 @@ window.simplifier = simplifier = (function createSimplifier() {
           if (selectedId === 'Step_3') {
             if (currentStep != 3) {
               currentStep = 3;
-              $('#Vocab').closest('form').hide();
-              $('#Type').closest('form').hide();
+              $('#Level').closest('form').hide();
               $('#Hard').closest('form').hide();
               $('#Instance').closest('form').hide();
-              $('#PoS').closest('form').hide();
               $('#Replacement').closest('form').hide();
               $('#Method').closest('form').hide();
               $('#Input').closest('form').hide();
@@ -360,9 +338,9 @@ window.simplifier = simplifier = (function createSimplifier() {
             return;
           }
           //try to recreate what presenter is based on convention
-          var presString = idArray[0] + ' presenter';
-          if (idArray[0] === 'Step' || idArray[0] === 'Method') {
-            presString = idArray[0] + ' ' + selectedInt + ' presenter';
+          var presString = idArray[0] + ' ' + selectedInt + " presenter";
+          if (idArray[0] == "Instance" || idArray[0] == "Replacement") {
+            presString = idArray[0] + ' presenter';
           }
           presenter = base.getItem(presString);
           presenter.setSomeDataEtc({isSelected: true}, self.getLocalId());
@@ -481,11 +459,18 @@ window.simplifier = simplifier = (function createSimplifier() {
     function focusOnSelect(publisher) {
       var here = this.getDataEtc();
       var pInfo = publisher.getDataEtc();
-      var parentDistance = pInfo.distanceFromFocus;
-      var inFocus = (parentDistance > -1 && parentDistance < 2);
+      var inFocus = (pInfo.distanceFromFocus > -1 && pInfo.distanceFromFocus < 2);
       if (pInfo.selectedItem === here.parentSelectionRequired && inFocus) {
         //parent has the right thing selected and is itself displayable, so make this displayable
-        this.setSomeDataEtc({distanceFromFocus: parentDistance}, this.getLocalId());
+        this.setSomeDataEtc({distanceFromFocus: 1}, this.getLocalId());
+      }
+      else {
+        //the right thing is not selected or parent is not displayable, so focus is off of this (most views will not want to display this)
+        var parentDistance = publisher.getDataEtc().distanceFromFocus;
+        //add 2 because if parent is 0 i.e. selected, we want 2 i.e. not displayable, 
+        //and if parent is 1 i.e. displayable, we want 3, 
+        //and if parent is 5 we want 7 because this extended difference determines preloading
+        this.setSomeDataEtc({distanceFromFocus: parentDistance + 2}, this.getLocalId());
       }
     }
     
@@ -608,7 +593,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       ],
       updateFrom: presenterUpdateFrom
     });//end create presenter
-    /*
+    
     //Req. 1.1.3
     //Create Resume Method model
     base.createItem({
@@ -643,9 +628,14 @@ window.simplifier = simplifier = (function createSimplifier() {
       ],
       updateFrom: presenterUpdateFrom
     });//end create presenter
-    */
     
-    //Req. 1.2 Create 1.2 Input tool model
+    
+    //now Req. 1.2
+    
+    
+    
+    
+    //Create 1.2 Input tool model
     base.createItem({
       localId: "1.2 Input tool model",
       dataEtc: {
@@ -751,10 +741,8 @@ window.simplifier = simplifier = (function createSimplifier() {
         //this.setSomeDataEtc({updated
         //prepare to collect user events and pass them to presenter
         $('#' + id).on("change", function(e) {
+          //prevent running this function twice (not sure why this is needed but it is)
           e.preventDefault();
-          textSentToWorker = false;
-          //TODO clear previous results
-          /*
           var titleAdded = $('#' + view.titleFieldId).val();
           var textAdded = $('#' + view.textareaId).val(); 
           var presenter = base.getItem(view.presenterId);
@@ -766,7 +754,6 @@ window.simplifier = simplifier = (function createSimplifier() {
           }
           presenter.setSomeDataEtc({title: titleAdded, text: textAdded}, self.getLocalId());
           presenter.getUpdateFromFunction().call(presenter, self);
-          */
         });
       }
     });
@@ -792,176 +779,350 @@ window.simplifier = simplifier = (function createSimplifier() {
     });//end create presenter
     
     
-    //Req. 2.1
-    //Create Vocab tool model
+    
+    //now Req. 2.1.1
+    //Creat3 List3 loader model
     base.createItem({
-      localId: "Vocab tool model",
+      localId: "List3 Loader model",
       dataEtc: {
-        distanceFromFocus: 4,
+        data: {
+        },
+        selectedItem: undefined,
+        distanceFromFocus: 2,
+        isLoaded: false
+      },
+      publisherIds: [
+        "Input Area model"
+      ],
+      updateFrom: function(publisher) {
+        //check if List3 (Specialized English) is loaded yet. If not, continue to load it.
+        if (this.getDataEtc().isLoaded) return;
+        if (publisher.getDataEtc().distanceFromFocus === 0) { //TODO need to check others like this
+          this.setSomeDataEtc({distanceFromFocus: 0}, this.getLocalId());
+        }
+        //var start = new Date();
+        //console.log('start: ' + start.toTimeString())
+        //open list from index.html
+        var specializedEnglish = $('#specializedEnglish').text();
+        //split by new lines
+        var lines = specializedEnglish.split('\n');
+        //console.log('lines: ' + lines.length)
+        var lexemeCount = 0;
+        var wordCount = 0;
+        for (var i in lines) {
+          var line = lines[i];
+          //if empty or one character, ignore
+          if (line.length < 5) continue;
+          if (line.length < 10) console.log('WARNING less than 7 in a line: *' + line + '*');
+          wordCount++;
+          //split by separator to isolate the word itself
+          var parts = line.split(' - ');
+          //  convert first part into id in core
+          var core = {}
+          core.localId = parts[0] + '-EN';
+          //console.log(core.localId);
+          core.dataEtc = {};
+          //  stem? or do that lazily?
+          //split further
+          for (var i in parts) {
+            //don't include the word itself
+            if (i != 0) {
+              lexemeCount++;
+              //isolate the part of speech
+              var keyVal = parts[i].split('. ~ ')
+              if (keyVal.length > 2) console.log('WARNING keyVal > 2');
+              var p = keyVal[0]
+              if (p !== 'n' && p !== 'v' && p !== 'ad' && p !== 'conj' && p !== 'prep' && p !== 'pro' && p !== 'int' && p !== 'unknown') {
+                // not really a part of speech?
+                console.log('unidentified part of speech: ' + p);
+              }
+              //  use p.o.s. as key for new object
+              //  in new object, state level as 3
+              //  remainder of line are "extra" synonyms--for use when this turns up as a synonym
+              core.dataEtc[p] = {level: 3, meanings: keyVal[1]};
+            }
+          }
+          //  createItem
+          var item = base.createItem(core);
+          if (item.getLocalId() !== parts[0] + '-EN') console.log('WARNING localId not right: ' + item.getLocalId() + ' !== ' + parts[0]);
+        }
+        this.setSomeDataEtc({isLoaded: true}, this.getLocalId());
+        //console.log("ending: " + new Date());
+        //console.log("lexemeCount: " + lexemeCount);
+        //console.log("wordCount: " + wordCount);
+      }
+    });//end of List3 loader model
+    
+    
+    //Req. 2.1
+    //Create Vocab Level tool model
+    base.createItem({
+      localId: "Vocab Level tool model",
+      dataEtc: {
+        selectedItem: 3,
+        distanceFromFocus: 2,
         parentSelectionRequired: 2,
-        textElement: "textarea__Input_1",
-        data: {"1600": {numHardWords: 0}, "3000": {numHardWords: 0}},
-        selectedVocab: "1600"
+        standardsReady: false
       },
       publisherIds: [
         "Steps tool model"
       ],
-      updateFrom: function(publisher) {
-        var here = this.getDataEtc();
-        var pInfo = publisher.getDataEtc();
-        //If no text, display warning
-        if (publisher.getLocalId() === 'Steps tool model') {
-          if (pInfo.selectedItem != 1) {
-            if (!$('#textarea__Input_1').val()) {
-              if (!$('#no_text_warning').length) {
-                $('#page').prepend("<h2 style='margin: 20px; text-align: center;' id='no_text_warning'>There is no input text. Please return to Step 1.</h2>");
-              }
-              return;
-            } 
-          }
-          else { //back to Step 1, still with no text
-            $('#no_text_warning').remove();
-          }
-        }
-        var parentDistance = pInfo.distanceFromFocus;
-        var inFocus = (parentDistance > -1 && parentDistance < 2);
-        if (pInfo.selectedItem === here.parentSelectionRequired && inFocus) {
-          //parent has the right thing selected and is itself displayable, so make this displayable
-          this.setSomeDataEtc({distanceFromFocus: parentDistance}, this.getLocalId());
-        }
-        //TODO add something to change selected Vocab
-      }
-    });//end create Vocab Vocab tool model
+      updateFrom: focusOnSelect
+    });//end create Vocab Level tool model
     
     
-    //Create 2.1 Vocab tool presenter  
+    //Create 2.1 Vocab Level tool presenter  
     base.createItem({
-      localId: "Vocab tool presenter",
+      localId: "Vocab Level tool presenter",
       dataEtc: {
-        elementId: "Vocab", 
+        elementId: "Level", 
         orientation: "vertical", 
         newAttribute: "style='display: inline-block;'",
-        modelId: "Vocab tool model",
+        modelId: "Vocab Level tool model",
         viewId: "View utility",
         viewMarkupId: "List view markup",
         parentId: "page",
-        selectedItem: 0,
+        selectedItem: 3,
         isDisplayed: false
       },
       publisherIds: [
-        "Vocab tool model"
+        "Vocab Level tool model"
       ],
       updateFrom: presenterUpdateFrom
     });
     
-    //Create Vocab title model
+    //Create 1.1 Vocab Level title model
     base.createItem({
-      localId: "Vocab title model",
+      localId: "Vocab Level title model",
       dataEtc: {
-        text: '2.1 Vocab Size',
+        text: '2.1 Vocab Level',
         distanceFromFocus: 2,
-        listModelId: "Vocab tool model",
-        Vocabition: 0
+        listModelId: "Vocab Level tool model",
+        position: 0
       },
       publisherIds: [
-        "Vocab tool model"
+        "Vocab Level tool model"
       ],
       updateFrom: itemModelUpdateFrom
     });
     
     base.createItem({
-      localId: "Vocab title presenter",
+      localId: "Vocab Level title presenter",
       dataEtc: {
-        elementId: "Vocab_0", 
-        modelId: "Vocab title model",
+        elementId: "Level_0", 
+        modelId: "Vocab Level title model",
         viewId: "View utility",
         viewMarkupId: "Item view markup",
         newAttribute: "disabled='disabled'",
-        parentId: "Vocab",
+        parentId: "Level",
         isSelected: false,
         isDisplayed: false
       },
       publisherIds: [
-        "Vocab title model"
+        "Vocab Level title model"
       ],
       updateFrom: presenterUpdateFrom
     });//end create presenter
-     
-    
-    //create presenter for auto-generated model data regarding vocabs (i.e. vocab sizes)
+        
+    //Req. 2.1.2
+    //Create Level 1 model
     base.createItem({
-      localId: "Vocab presenter",
+      localId: "Level 1 model",
       dataEtc: {
-        viewId: "View utility",
-        hardWord: '',
-        sentenceArray: [],
-        selectedIndex: 0,
-        isDisplayed: false
+        text: '1: ~300 words',
+        distanceFromFocus: 3, // neither displayable nor selected, but preloaded
+        listModelId: "Vocab Level tool model", //if localId is a title or list item, use list-holding model here and below in publisherIds
+        position: 1
       },
       publisherIds: [
-        "Vocab tool model"
+        "Vocab Level tool model" //if localId is a title or list item, use list-holding model here and above by listModelId
       ],
-      updateFrom: function(publisher) {
-        if (this.getDataEtc().isDisplayed) return;
-        var pub = publisher.getDataEtc();
-        var vocab = pub.selectedVocab; 
-        var data = pub.data;   
-        for (var i in data) {
-          //set data and publish to view
-          var view = base.getItem(this.getDataEtc().viewId);
-          var selection = false;
-          var newAttr = "data-iconpos='right'";
-          var displayText = i;
-          if (vocab === i) {
-            selection = true;
-            newAttr = "data-iconpos='right' data-icon='arrow-r'";
-          }
-          var place = parseInt(i) +1;
-          var elementId = 'Vocab_' + place;
-          var thisData = {text: displayText, position: place, isSelected: selection, parentId: 'Vocab', elementId: elementId, 
-            viewMarkupId: "Item view markup", newAttribute: newAttr}; 
-          view.setSomeDataEtc({data: thisData}, this.getLocalId());
-          view.getUpdateFromFunction().call(view, this);
-        }
-        this.setSomeDataEtc({isDisplayed: true}, this.getLocalId());
-      }//end updateFrom
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    //Create Level 1 presenter
+    base.createItem({
+      localId: "Level 1 presenter", //use parentId and model position and "presenter"
+      dataEtc: {
+        elementId: "Level_1", //use parentId and model position
+        modelId: "Level 1 model", //if changing, also change this in publisherIds below
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        newAttribute: "disabled='disabled'",
+        parentId: "Level",
+        isSelected: false,
+        isDisplayed: false //i.e. not yet
+      },
+      publisherIds: [
+        "Level 1 model" //if changing this, also change this in modelId above
+      ],
+      updateFrom: presenterUpdateFrom
     });//end create presenter
-        
+    
+    
+    //Req. 2.1.2
+    //Create Level 2 model
+    base.createItem({
+      localId: "Level 2 model",
+      dataEtc: {
+        text: '2: ~800 words',
+        distanceFromFocus: 3, // neither displayable nor selected, but preloaded
+        listModelId: "Vocab Level tool model", //if localId is a title or list item, use list-holding model here and below in publisherIds
+        position: 2
+      },
+      publisherIds: [
+        "Vocab Level tool model" //if localId is a title or list item, use list-holding model here and above by listModelId
+      ],
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    //Create Level 2 presenter
+    base.createItem({
+      localId: "Level 2 presenter", //use parentId and model position and "presenter"
+      dataEtc: {
+        elementId: "Level_2", //use parentId and model position
+        modelId: "Level 2 model", //if changing, also change this in publisherIds below
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        newAttribute: "disabled='disabled'",
+        parentId: "Level",
+        isSelected: false,
+        isDisplayed: false //i.e. not yet
+      },
+      publisherIds: [
+        "Level 2 model" //if changing this, also change this in modelId above
+      ],
+      updateFrom: presenterUpdateFrom
+    });//end create presenter
+    
+    //Req. 2.1.2
+    //Create Level 3 model
+    base.createItem({
+      localId: "Level 3 model",
+      dataEtc: {
+        text: '3: ~1600 words',
+        distanceFromFocus: 2, // not displayable bit selected
+        listModelId: "Vocab Level tool model", //if localId is a title or list item, use list-holding model here and below in publisherIds
+        position: 3
+      },
+      publisherIds: [
+        "Vocab Level tool model" //if localId is a title or list item, use list-holding model here and above by listModelId
+      ],
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    //Create Level 3 presenter
+    base.createItem({
+      localId: "Level 3 presenter", //use parentId and model position and "presenter"
+      dataEtc: {
+        elementId: "Level_3", //use parentId and model position
+        modelId: "Level 3 model", //if changing, also change this in publisherIds below
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        newAttribute: "data-icon='arrow-r' data-iconpos='right'",
+        parentId: "Level",
+        isSelected: true,
+        isDisplayed: false //i.e. not yet
+      },
+      publisherIds: [
+        "Level 3 model" //if changing this, also change this in modelId above
+      ],
+      updateFrom: presenterUpdateFrom
+    });//end create presenter
+    
+    //Req. 2.1.2
+    //Create Level 4 model
+    base.createItem({
+      localId: "Level 4 model",
+      dataEtc: {
+        text: '4: ~3000 words',
+        distanceFromFocus: 3, // neither displayable nor selected, but preloaded
+        listModelId: "Vocab Level tool model", //if localId is a title or list item, use list-holding model here and below in publisherIds
+        position: 4
+      },
+      publisherIds: [
+        "Vocab Level tool model" //if localId is a title or list item, use list-holding model here and above by listModelId
+      ],
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    //Create Level 4 presenter
+    base.createItem({
+      localId: "Level 4 presenter", //use parentId and model position and "presenter"
+      dataEtc: {
+        elementId: "Level_4", //use parentId and model position
+        modelId: "Level 4 model", //if changing, also change this in publisherIds below
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        newAttribute: "disabled='disabled'",
+        parentId: "Level",
+        isSelected: false,
+        isDisplayed: false //i.e. not yet
+      },
+      publisherIds: [
+        "Level 4 model" //if changing this, also change this in modelId above
+      ],
+      updateFrom: presenterUpdateFrom
+    });//end create presenter
+    
+    //Req. 2.1.2
+    //Create Level 5 model
+    base.createItem({
+      localId: "Level 5 model",
+      dataEtc: {
+        text: '5: ~5000 words',
+        distanceFromFocus: 3, // neither displayable nor selected, but preloaded
+        listModelId: "Vocab Level tool model", //if localId is a title or list item, use list-holding model here and below in publisherIds
+        position: 5
+      },
+      publisherIds: [
+        "Vocab Level tool model" //if localId is a title or list item, use list-holding model here and above by listModelId
+      ],
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    //Create Level 5 presenter
+    base.createItem({
+      localId: "Level 5 presenter", //use parentId and model position and "presenter"
+      dataEtc: {
+        elementId: "Level_5", //use parentId and model position
+        modelId: "Level 5 model", //if changing, also change this in publisherIds below
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        newAttribute: "disabled='disabled'",
+        parentId: "Level",
+        isSelected: false,
+        isDisplayed: false //i.e. not yet
+      },
+      publisherIds: [
+        "Level 5 model" //if changing this, also change this in modelId above
+      ],
+      updateFrom: presenterUpdateFrom
+    });//end create presenter
+    
         //Req. 2.2
     //Create Type tool model
     base.createItem({
       localId: "Type tool model",
       dataEtc: {
         distanceFromFocus: 4,
-        //Req. 2.1, Req. 2.2 the collection of four containers referenced in Type will be only one of the fours/Vocabs/collections referenced in Vocab
-        selectedVocab: {},
+        //Req. 2.1, Req. 2.2 the collection of four containers referenced in Type will be only one of the fours/levels/collections referenced in Level
+        selectedLevel: {},
         //Req. 2.2, Req. 2.3 the container of hard words referenced in hard words tool will be only one of the containers referenced in Type
-        types: ["Unchecked", "Preapproved", "Ignored", "Simplified"],
-        data: {},
-        selectedType: "Unchecked",
-        isComplete: false
+        types: ["Unchecked", "Preapproved", "Exceptions", "Simplified"],
+        selectedType: "Unchecked"
       },
       publisherIds: [
-        "Vocab tool model"
+        "Vocab Level tool model"
       ],
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc();
-        var here = this.getDataEtc();
-        var growingData = pub.data;
-        if (here.distanceFromFocus != pub.distanceFromFocus && pub.distanceFromFocus) {
-          if (!here.isComplete) {
-            for (var vocab in pub.data) {
-              for (var i in here.types) {
-                growingData[vocab][here.types[i]] = {};
-              }
-            }
-          }
-          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, selectedVocab: pub.selectedVocab, data: growingData, isComplete: true}, this.getLocalId());
+        if (this.getDataEtc().distanceFromFocus != pub.distanceFromFocus && pub.distanceFromFocus) {
+          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, selectedLevel: pub.selectedLevel}, this.getLocalId());
         }
-        
-        //TODO add something to change selected type
+        //TODO add something to change selected level
       }
-    });//end create Type tool model
+    });//end create Vocab Level tool model
     
     
     //Create 2.2 Type tool presenter  
@@ -988,7 +1149,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     base.createItem({
       localId: "Type title model",
       dataEtc: {
-        text: '2.2 Status',
+        text: '2.2 Result Type',
         distanceFromFocus: 2,
         listModelId: "Type tool model",
         position: 0
@@ -1032,10 +1193,9 @@ window.simplifier = simplifier = (function createSimplifier() {
         "Type tool model"
       ],
       updateFrom: function(publisher) {
-        if (this.getDataEtc().isDisplayed) return;
         var pub = publisher.getDataEtc();
         var type = pub.selectedType; 
-        var types = pub.types;  
+        var types = pub.types;   
         for (var i in types) {
           //set data and publish to view
           var view = base.getItem(this.getDataEtc().viewId);
@@ -1045,18 +1205,15 @@ window.simplifier = simplifier = (function createSimplifier() {
             selection = true;
             newAttr = "data-iconpos='right' data-icon='arrow-r'";
           }
-          var place = parseInt(i) +1;
-          var elementId = 'Type_' + place;
-          var thisData = {text: types[i], position: place, isSelected: selection, parentId: 'Type', elementId: elementId, 
+          var elementId = 'Type_' + (i+1);
+          var thisData = {text: types[i], position: i+1, isSelected: selection, parentId: 'Type', elementId: elementId, 
             viewMarkupId: "Item view markup", newAttribute: newAttr}; 
           view.setSomeDataEtc({data: thisData}, this.getLocalId());
           view.getUpdateFromFunction().call(view, this);
         }
         this.setSomeDataEtc({isDisplayed: true}, this.getLocalId());
       }//end updateFrom
-    });//end create Type presenter
-    
-    
+    });//end create presenter
     
     //Req. 2.3
     //Create Hard Word tool model with analyzer (chunker and checker)
@@ -1064,72 +1221,168 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Hard Words tool model",
       dataEtc: {
         selectedWord: '', //nothing selected yet, because contents to be generated dynamically
+        selectedItem: 0,//index? because presenterupdatefrom has position already? what does instance need?
         distanceFromFocus: 2,
-        latestHardWords: [],
-        inputArray: [],
-        data: {},
-        isComplete: false
+        //parentSelectionRequired: 2,
+        standardsReady: false,
+        lastChange: 0,
+        text: '',
+        idStarter: 'input_', //localId starter for sentences
+        hardWords: {}
       },
       publisherIds: [
-        "Type tool model"
+        "List3 Loader model",
+        "Input Area model",
+        "Vocab Level tool model"
       ],
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc();
         var here = this.getDataEtc();
-        if (here.distanceFromFocus != pub.distanceFromFocus && pub.distanceFromFocus) {
-          if (!here.isComplete) {
-            if (!worker.addEventListener) {
-              worker = new Worker("js/analyze.js");
-              worker.addEventListener('message', onMsg, false);
-            }
-            worker.postMessage($('#textarea__Input_1').val());
-          } 
+        if (pub.isLoaded) {
+          //Simple word list(s) complete
+          //if that's already recorded, nothing more to do
+          if (here.standardsReady) return;
+          //otherwise, record it
+          this.setSomeDataEtc({standardsReady: true}, this.getLocalId());
+          //check if text changed (TODO not tested adequately yet)
+          if (here.lastChange > 0) {
+            analyze(here.text, this);
+          }
         }
-        var growingInput, growingData, newHardWords;
-        var self = this;
-        var hCount = 0;
-        function onMsg(e) {
-          //setTimeout(func, 0)
-          //function func() {
-            if (e.data.status === 'finished') {
-              //update counts
-              $('#Hard').find('.ui-btn-text').first().text("2.3 Hard Word");
-              //refresh css
-              setTimeout(refresh, 0);
-              return;
-            }
-            
-            //;console.log("Worker said : " + e.data.textArray.join('') + 'From: ' + e.data.whence + ', status: ' + e.data.status );
-            newHardWords = [];
-            growingInput = here.inputArray;
-            growingInput.push(e.data.textArray);
-            growingData = pub.data;
-            for (var word in e.data.hardWords) {
-              if (!growingData['1600']['Unchecked'][word]) {
-                growingData['1600']['Unchecked'][word] = e.data.hardWords[word];
-                newHardWords.push(word);
-                //Req. 2.3.3
-                if (hCount++ == 4) {
-                  refresh()
+        else if (pub.timesChanged) {
+          //Text has been added by user  
+          if (pub.timesChanged == here.timesChanged) {
+            //console.log('quitting');// (TODO not tested adequately yet)
+            return;
+          }
+          if (pub.text == here.text) {
+            //console.log('quitting again')
+            return;
+          }
+          this.setSomeDataEtc({lastChange: pub.timesChanged, text: pub.text}, this.getLocalId());
+          if (here.standardsReady) {
+            analyze(pub.text, this);
+          }
+        }
+        //if publisher is Vocab Level or Section tool model
+        else if (pub.selectedItem) {
+          if (pub.distanceFromFocus < 2 && pub.distanceFromFocus > -1) {
+            //user has selected Step 2 and older siblings are in focus so time to be in focus too
+            this.setSomeDataEtc({distanceFromFocus: 1}, this.getLocalId());
+          }
+          else {
+            //user has moved to a different focus
+            this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus + 1}, this.getLocalId());
+          }
+        }
+        function analyze(text, self) {
+          //break up user text
+          //First, break at line breaks
+          var paragraphs = text.split('\n');
+          var pText = '', div = [], sentenceLength = 0, currentSentence = [], isFinalizer = false, isFinalDot = false;
+          var isBeforeWord = true, isCap = false, prevCap = false, isEasy = false, idCount = 0, sentenceId, obj = {};
+          var hardWords = {}, inputId = '', selWord = '';
+          for (var i in paragraphs) {
+            pText = paragraphs[i];
+            //find first alphabetical characters, case insensitive
+            //split and take first as non-word
+            //for every non-word, keep track of first char, last (and length?)
+            div = pText.split(/([a-zA-Z].*)/);
+            //keep track of sentence length
+            sentenceLength = div[0].length
+            //for every non-word, add to current sentence
+            currentSentence = [div[0]];
+            //deal with the remainder of the pText
+              if (div[1]) {
+                pText = div[1];
+              } else pText = '';
+            while (pText) {
+              //get an alphabetical word, isolating it from ' if not followed by alph or any non-alph and all that follows.
+              div = pText.split(/(\'(?![a-zA-Z])(.|\n)*|[^a-zA-Z\'](.|\n)*)/);
+              //keep track of sentence length
+              sentenceLength += div[0].length;
+              //if the first letter of the last word was capitalized, the final period and following cap may not mean anything
+              //e.g. Mr. Doe
+              prevCap = isCap;
+              //if the first letter is capitalized, it may be the beginning of a sentence
+              isCap = /^[A-Z]/.test(div[0]);
+              //check to see if it is in the easy-list
+              isEasy = (base.getItem(div[0] + '-EN') || base.getItem(div[0].toLowerCase() + '-EN')) ? true: false;
+              //TODO add stemming here, trying again to make it easy if it presently fails the isEasy test (e.g. 'Did')
+              //TODO add affixes here, trying again to make it easy if it presently fails the isEasy test (e.g. 'undo', because do is in list and un- is easy)
+              if (!isEasy) {
+                //anticipate sentenceId but don't increment yet
+                sentenceId = 'input_' + idCount;
+                //if hard word not encountered yet, make a location for it
+                if (!hardWords[div[0]]) {
+                  //select the first hard word
+                  if (!Object.keys(hardWords).length) {
+                    selWord = div[0];
+                  }
+                  hardWords[div[0]] = {};
+                  hardWords[div[0]].sentences = {}
                 }
+                //add this sentence as one instance of this hard word
+                hardWords[div[0]].sentences[sentenceId] = {};
               }
-              if (!growingData['1600']['Unchecked'][word].sentences) {
-                growingData['1600']['Unchecked'][word].sentences = {};
+            //console.log('length: ' + div.length + ', div[0]: *' + div[0] + '*, isFin: ' + isFinalizer + ', isSp: ' + isBeforeWord + ', div[1]: *' + div[1] + '*, isCap: ' + isCap + ', isEasy: ' + isEasy + ', div[2]: *' + div[2] + '*, div[3]: *' + div[3] + '*');
+              //check if paragraph is over or sentence is long enough and there's still a ways to go; if so, save and start new sentence
+              if (!pText || (sentenceLength > 70 && pText.length > sentenceLength && (isFinalizer || (isFinalDot && !prevCap)) && isBeforeWord && isCap)) {
+                //check if id is already there; if so, delete, then recreate
+                inputId = 'input_' + idCount++;
+                if (base.getItem(inputId)) base.deleteItem(inputId);
+                base.createItem({localId: inputId, dataEtc: {textArray: currentSentence}});
+            //console.log('sentence length: ' + sentenceLength);
+                currentSentence = [];
+                sentenceLength = 0;
               }
-              if (!growingData['1600']['Unchecked'][word].sentences[growingInput.length-1]) {
-                growingData['1600']['Unchecked'][word].sentences[growingInput.length-1] = {};
-              }
-
+              //for every word, add to current sentence
+              currentSentence.push(div[0]);
+              //deal with the remainder of the pText
+              if (div[1]) {
+                pText = div[1];
+              } else pText = '';
+              //get non-alphabetic characters after each word
+              div = pText.split(/([a-zA-Z].*)/);
+              //if it includes a final punctuation not followed by a digit, it may be the end of a sentence
+              isFinalizer = /[!?]/.test(div[0]);
+              //if it includes a dot not followed by a digit, it may be the end of a sentence.
+              isFinalDot = /\.(?!\d)/.test(div[0]);
+              //if it ends with a space, it is end of word and may be the end of a sentence
+              isBeforeWord = (!div[0] || /\s$/.test(div[0]));
+              //for every non-word, add to current sentence
+              currentSentence.push(div[0]);
+              //keep track of sentence length
+              sentenceLength += div[0].length;
+            //console.log('length: ' + div.length + ', div[0]: *' + div[0] + '*, isFin: ' + isFinalizer + ', isSp: ' + isBeforeWord + ', div[1]: *' + div[1] + '*, div[2]: *' + div[2] + '*');
+              //deal with the remainder of the pText
+              if (div[1]) {
+                pText = div[1];
+              } else pText = '';
+            }//end while pText
+            //paragraph text is over, so take current sentence and add a line break, then save
+            currentSentence.push('\n');
+            //check if id is already there; if so, delete, then recreate
+            inputId = 'input_' + idCount++;
+            if (base.getItem(inputId)) base.deleteItem(inputId);
+            base.createItem({localId: inputId, dataEtc: {textArray: currentSentence}});
+          }//end for each paragraph 
+          self.setSomeDataEtc({hardWords: hardWords, selectedWord: selWord});
+          /*AN EXAMPLE OF HOW LATER TO OUTPUT FINAL TEXT
+          var nextInt = 0;
+          var nextItem = base.getItem('input_' + nextInt);
+          while (nextItem) {
+            console.log(nextItem.getDataEtc().textArray.join(''))
+            nextItem = base.getItem('input_' + nextInt++)
+            if (nextInt > 1000) {
+              console.log('>1000')
+              break;
             }
-            
-            self.setSomeDataEtc({inputArray: growingInput, data: growingData, latestHardWords: newHardWords}, self.getLocalId());
-          //}
-        }
-        this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, isComplete: true}, this.getLocalId());
-        
-        //TODO add something to change selected type
-      }//end updateFrom
-    });//end create Hard Words model tool
+          }
+          */
+        }//end analyzer function
+      }//end updateFor
+    });//end create analyzer model item
     
     //Create 2.3 Hard Words tool presenter  
     base.createItem({
@@ -1155,7 +1408,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     base.createItem({
       localId: "Hard Words title model",
       dataEtc: {
-        text: '2.3 Hard Word (loading)',
+        text: '2.3 Hard Word',
         distanceFromFocus: 2,
         listModelId: "Hard Words tool model",
         position: 0
@@ -1191,7 +1444,10 @@ window.simplifier = simplifier = (function createSimplifier() {
         viewId: "View utility",
         modelId: "Hard Words tool model",
         selectedIndex: 0,
-        lastIndex: 0
+        hardWordsArray: [],
+        lastChange: 0,
+        isDisplayed: false
+        //elementId will be added here, but often changed, so don't depend on it's value
       },
       publisherIds: [
         "Hard Words tool model"
@@ -1199,29 +1455,58 @@ window.simplifier = simplifier = (function createSimplifier() {
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc(); 
         var here = this.getDataEtc();
-        var view = base.getItem(this.getDataEtc().viewId);
-        var newIndex = here.lastIndex;
-        var arr = pub.latestHardWords;
-        var elementId = '';
-        var selection, newAttr;
-        for (var i in arr) {
-          selection = false;
-          newAttr = "data-iconpos='right'";
-          elementId = 'Hard_' + ++newIndex;
-          //set data and publish to view
-          if (newIndex === 1) {
-            selection = true;
-            newAttr: "data-icon='arrow-r' data-iconpos='right'";
-            var model = base.getItem(this.getDataEtc().modelId);
-            model.setSomeDataEtc({selectedWord: arr[i]}, this.getLocalId());
+        //if publisher is Hard Words tool model, get hard words and turn them into an array for displaying
+          //(before they were in object for lookup by the word itself when encountered in the text, but present view prefers numbers)
+        if (pub.hardWords) {
+          var num = pub.lastChange;
+          //it is the Hard Words tool model and it has processed the text (or some of it)
+          //if not isDisplayed, give them to view utility one by one and set isDisplayed to true
+          if (pub.distanceFromFocus > -1 && pub.distanceFromFocus < 2) {
+            if (!here.isDisplayed) {
+            this.setSomeDataEtc({lastChange: num}, this.getLocalId());
+            //this.setSomeDataEtc({lastChange: pub.lastChange}, this.getLocalId());
+            display(this); //sets isDisplayed to true
+            }
+            else if (pub.lastChange > here.lastChange) {
+              //already displayed but must undisplay and redisplay
+              for (var i in here.hardWordsArray) {
+                $('#Hard_' + (i)).closest('div').remove();
+              }
+             this.setSomeDataEtc({lastChange: num, isDisplayed: true}, this.getLocalId());
+              display(this);
+            }
           }
-          var thisData = {text: arr[i], position: newIndex, isSelected: selection, parentId: 'Hard', elementId: elementId, 
-            viewMarkupId: "Item view markup", newAttribute: newAttr}; 
-          view.setSomeDataEtc({data: thisData}, this.getLocalId());
-          view.getUpdateFromFunction().call(view, this);
+        }//if it's the Hard Words tool model but no hardWords, do nothing until it announces its hardWords are ready.
+        //if update is run by view markup, it has set selectedIndex here, so fetch and set selectedWord in model for future observers
+        else if (pub.dataType == "html") {
+          var model = base.getItem("Hard Words tool model");
+          var hard = here.hardWordsArray[here.selectedIndex];
+          model.setSomeDataEtc({selectedWord: hard}, this.getLocalId());
+          model.getUpdateFromFunction().call(model, this);
         }
+        var self = this;
         
-        this.setSomeDataEtc({lastIndex: newIndex}, this.getLocalId());
+        function display(self) {
+          var view = base.getItem(self.getDataEtc().viewId);
+          var hardArray = [undefined];
+          for (var word in pub.hardWords) {
+            var num = hardArray.length;
+            var elementId = 'Hard_' + num;
+            hardArray.push(word);
+            //set data and publish to view
+            var selection = false;
+            if (num === 1) {
+              selection = true;
+              //var model = base.getItem(self.getDataEtc().modelId);
+              //model.setSomeDataEtc({selectedWord: word});
+            }
+            var thisData = {text: word, position: num, isSelected: selection, parentId: 'Hard', elementId: elementId, 
+              viewMarkupId: "Item view markup", newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
+            view.setSomeDataEtc({data: thisData}, self.getLocalId());
+            view.getUpdateFromFunction().call(view, self);
+          }
+          self.setSomeDataEtc({isDisplayed: true, hardWordsArray: hardArray}, self.getLocalId());
+        }//end display()
         
       }//end updateFrom
     });//end create presenter
@@ -1243,7 +1528,7 @@ window.simplifier = simplifier = (function createSimplifier() {
           this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus});
         }
       }
-    });//end create Instance tool model
+    });//end create Vocab Level tool model
     
     
     //Create 2.4 Instance tool presenter  
@@ -1408,11 +1693,11 @@ window.simplifier = simplifier = (function createSimplifier() {
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc();
         if (this.getDataEtc().distanceFromFocus != pub.distanceFromFocus && pub.distanceFromFocus) {
-          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, selectedVocab: pub.selectedVocab}, this.getLocalId());
+          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, selectedLevel: pub.selectedLevel}, this.getLocalId());
         }
         //TODO add something to change selected level
       }
-    });//end create PoS tool model
+    });//end create Vocab Level tool model
     
     
     //Create 2.5 PoS tool presenter  
@@ -1483,7 +1768,6 @@ window.simplifier = simplifier = (function createSimplifier() {
         "PoS tool model"
       ],
       updateFrom: function(publisher) {
-        if (this.getDataEtc().isDisplayed) return;
         var pub = publisher.getDataEtc();
         var poS = pub.selectedPoS; 
         var partsOfSpeech = pub.partsOfSpeech;   
@@ -1496,9 +1780,8 @@ window.simplifier = simplifier = (function createSimplifier() {
             selection = true;
             newAttr = "data-iconpos='right' data-icon='arrow-r'";
           }
-          var place = parseInt(i) +1;
-          var elementId = 'PoS_' + place;
-          var thisData = {text: partsOfSpeech[i], position: place, isSelected: selection, parentId: 'PoS', elementId: elementId, 
+          var elementId = 'PoS_' + (i+1);
+          var thisData = {text: partsOfSpeech[i], position: i+1, isSelected: selection, parentId: 'PoS', elementId: elementId, 
             viewMarkupId: "Item view markup", newAttribute: newAttr}; 
           view.setSomeDataEtc({data: thisData}, this.getLocalId());
           view.getUpdateFromFunction().call(view, this);
@@ -1759,9 +2042,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         
       }//end updateFrom
     });//end create presenter
-    var result;
-    function testAnalyze(inputText) {
-    }
+    
   }
   return {
     go: go
