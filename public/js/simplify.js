@@ -181,8 +181,15 @@ window.simplifier = simplifier = (function createSimplifier() {
         //this should be model; check distanceFromFocus; 1 means displayable, 0 means selected, 2-5 should be preloaded, -1 == "back"/"undo" history
         if (pInfo.distanceFromFocus === 1 || pInfo.distanceFromFocus === 0) {
           //If the data is not displayed, display it
-          if (!$('#' + here.elementId).length) {
-          //if (here.isDisplayed === false) {
+          var displayable = (!$('#' + here.elementId).length);
+          if (!displayable && publisher.getLocalId() == "Instance tool model" && pInfo.selectedWord != here.selectedWord && $('#Instance_1' ).length) {
+            //erase what's been displayed and redisplay
+            $('#' + here.elementId).closest('fieldset').empty();
+            refresh();
+            this.setSomeDataEtc({selectedWord: pInfo.selectedWord}, this.getLocalId());
+            return;
+          }
+          if (displayable) {
             //set data and publish, allowing presentation function to display view
             var view = base.getItem(this.getDataEtc().viewId);
                 this.setSomeDataEtc(pInfo, this.getLocalId());
@@ -354,7 +361,7 @@ window.simplifier = simplifier = (function createSimplifier() {
           var presenter;
           if (idStarter == "#Hard") {
             presenter = base.getItem('Hard Words presenter');
-            presenter.setSomeDataEtc({selectedIndex: selectedInt}, self.getLocalId());
+            presenter.setSomeDataEtc({selectedIndex: selectedInt, selectedWord: $('#' + selectedId).val()}, self.getLocalId());
             presenter.getUpdateFromFunction().call(presenter, self); 
             $('#page').trigger('create');
             return;
@@ -365,6 +372,7 @@ window.simplifier = simplifier = (function createSimplifier() {
             presString = idArray[0] + ' ' + selectedInt + ' presenter';
           }
           presenter = base.getItem(presString);
+          if (!presenter) return;
           presenter.setSomeDataEtc({isSelected: true}, self.getLocalId());
           presenter.getUpdateFromFunction().call(presenter, self);
           
@@ -1085,7 +1093,7 @@ window.simplifier = simplifier = (function createSimplifier() {
             worker.postMessage($('#textarea__Input_1').val());
           } 
         }
-        var growingInput, growingData, newHardWords;
+        var growingInput, growingData, newHardWords, selected;
         var self = this;
         var hCount = 0;
         function onMsg(e) {
@@ -1101,6 +1109,7 @@ window.simplifier = simplifier = (function createSimplifier() {
             
             //;console.log("Worker said : " + e.data.textArray.join('') + 'From: ' + e.data.whence + ', status: ' + e.data.status );
             newHardWords = [];
+            selected = here.selectedWord;
             growingInput = here.inputArray;
             growingInput.push(e.data.textArray);
             growingData = pub.data;
@@ -1112,17 +1121,20 @@ window.simplifier = simplifier = (function createSimplifier() {
                 if (hCount++ == 4) {
                   refresh()
                 }
+                if (hCount == 1) {
+                  selected = word;
+                }
               }
-              if (!growingData['1600']['Unchecked'][word].sentences) {
-                growingData['1600']['Unchecked'][word].sentences = {};
+              if (!growingData['1600']['Unchecked'][word].sentenceInfo) {
+                growingData['1600']['Unchecked'][word].sentenceInfo = {};
               }
-              if (!growingData['1600']['Unchecked'][word].sentences[growingInput.length-1]) {
-                growingData['1600']['Unchecked'][word].sentences[growingInput.length-1] = {};
+              if (!growingData['1600']['Unchecked'][word].sentenceInfo[growingInput.length-1]) {
+                growingData['1600']['Unchecked'][word].sentenceInfo[growingInput.length-1] = {};
               }
 
             }
             
-            self.setSomeDataEtc({inputArray: growingInput, data: growingData, latestHardWords: newHardWords}, self.getLocalId());
+            self.setSomeDataEtc({selectedWord: selected, inputArray: growingInput, data: growingData, latestHardWords: newHardWords}, self.getLocalId());
           //}
         }
         this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, isComplete: true}, this.getLocalId());
@@ -1190,6 +1202,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       dataEtc: {
         viewId: "View utility",
         modelId: "Hard Words tool model",
+        selectedWord: '',
         selectedIndex: 0,
         lastIndex: 0
       },
@@ -1197,32 +1210,37 @@ window.simplifier = simplifier = (function createSimplifier() {
         "Hard Words tool model"
       ],
       updateFrom: function(publisher) {
-        var pub = publisher.getDataEtc(); 
+        var pub = publisher.getDataEtc();
         var here = this.getDataEtc();
-        var view = base.getItem(this.getDataEtc().viewId);
-        var newIndex = here.lastIndex;
-        var arr = pub.latestHardWords;
-        var elementId = '';
-        var selection, newAttr;
-        for (var i in arr) {
-          selection = false;
-          newAttr = "data-iconpos='right'";
-          elementId = 'Hard_' + ++newIndex;
-          //set data and publish to view
-          if (newIndex === 1) {
-            selection = true;
-            newAttr: "data-icon='arrow-r' data-iconpos='right'";
-            var model = base.getItem(this.getDataEtc().modelId);
-            model.setSomeDataEtc({selectedWord: arr[i]}, this.getLocalId());
+        if (publisher.getLocalId() == "Hard Words tool model") {
+          var view = base.getItem(this.getDataEtc().viewId);
+          var newIndex = here.lastIndex;
+          var arr = pub.latestHardWords;
+          var elementId = '';
+          var selection, newAttr;
+          for (var i in arr) {
+            selection = false;
+            newAttr = "data-iconpos='right'";
+            elementId = 'Hard_' + ++newIndex;
+            //set data and publish to view
+            if (newIndex === 1) {
+              selection = true;
+              newAttr: "data-icon='arrow-r' data-iconpos='right'";
+              //not setting selectedWord of tool model because it already set itself
+              //var model = base.getItem(this.getDataEtc().modelId);
+              //model.setSomeDataEtc({selectedWord: arr[i]}, this.getLocalId());
+            }
+            var thisData = {text: arr[i], position: newIndex, isSelected: selection, parentId: 'Hard', elementId: elementId, 
+              viewMarkupId: "Item view markup", newAttribute: newAttr}; 
+            view.setSomeDataEtc({data: thisData}, this.getLocalId());
+            view.getUpdateFromFunction().call(view, this);
           }
-          var thisData = {text: arr[i], position: newIndex, isSelected: selection, parentId: 'Hard', elementId: elementId, 
-            viewMarkupId: "Item view markup", newAttribute: newAttr}; 
-          view.setSomeDataEtc({data: thisData}, this.getLocalId());
-          view.getUpdateFromFunction().call(view, this);
+          this.setSomeDataEtc({lastIndex: newIndex}, this.getLocalId());
+          return
         }
-        
-        this.setSomeDataEtc({lastIndex: newIndex}, this.getLocalId());
-        
+        //else view updated us on click and is letting us know
+        var model = base.getItem(here.modelId);
+        model.setSomeDataEtc({selectedWord: here.selectedWord}, this.getLocalId());
       }//end updateFrom
     });//end create presenter
     
@@ -1232,15 +1250,17 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Instance tool model",
       dataEtc: {
         distanceFromFocus: 4,
-        selectedItem: 0
+        selectedWord: '',
+        inputArray: [],
+        data: undefined
       },
       publisherIds: [
         "Hard Words tool model"
       ],
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc();
-        if (this.getDataEtc().distanceFromFocus != pub.distanceFromFocus && pub.selectedWord) {
-          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus});
+        if (pub.distanceFromFocus < 2 && pub.selectedWord) {
+          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, data: pub.data, inputArray: pub.inputArray, selectedWord: pub.selectedWord});
         }
       }
     });//end create Instance tool model
@@ -1258,6 +1278,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         viewMarkupId: "List view markup",
         parentId: "page",
         selectedItem: 0,
+        selectedWord: '',
         isDisplayed: false
       },
       publisherIds: [
@@ -1305,86 +1326,54 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Instance presenter",
       dataEtc: {
         viewId: "View utility",
-        hardWord: '',
+        selectedWord: '',
         sentenceArray: [],
         selectedIndex: 0,
+        lastLength: 0,
+        nextPosition: 1,
         isDisplayed: false
       },
       publisherIds: [
-        "Hard Words tool model",
         "Instance tool model"
       ],
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc(); 
         var here = this.getDataEtc();
-        //if publisher is Hard Words tool model, get hard word and look it up in hard words to find sentences; put them in array
-        if (pub.hardWords && pub.distanceFromFocus < 2) {
-          var word = pub.selectedWord; 
-          /* if (!word) {
-          console.log('we still need this')
-            for (var w in pub.hardWords) {
-              word = w;
-              //cut loop short after first iteration; like finding [0]--almost
-              break; 
-            }
-          } */
-          //if the selectedWord has not changed in Hard Words tool model, no need to update instances
-          if (word == here.hardWord) {
-            return;
-          }
-          //else if the selectedWord has changed and instances are displayed for a previous selected word, erase all and start over
-          if (here.hardWord) {
-            this.setSomeDataEtc({hardWord: '', isDisplayed: false}, this.getLocalId());
-            $('#Instance_0').closest('form').remove();
-            var model = base.getItem("Instance tool model");
-            model.setSomeDataEtc({selectedItem: 0}, this.getLocalId());
-            return;
-          }
-          //else there are no instances displayed yet, so go ahead and display them.
-          var sentences;
-          if (pub.hardWords[word]) {
-            sentences = pub.hardWords[word].sentences;
-          }
-          var sArray = [];
-          for (var id in sentences) { 
-            sArray.push(id);
-          }
-          this.setSomeDataEtc({sentenceArray: sArray, hardWord: word}, this.getLocalId());
-          if (!here.isDisplayed && here.selectedIndex) {
-            display(this);
-          }
-        }
-        else if (pub.dataType == "html") {
-        //TODO update for observers
-        }
-        else if (publisher.getLocalId() === 'Instance tool model') { 
-          if (pub.distanceFromFocus < 2) {
-            this.setSomeDataEtc({selectedIndex: 1}, this.getLocalId());
-          }
-          else {
-            //title will remove all?
-          }
-        }
+        var sentenceInfo; 
+        var newLength;
         var self = this;
-        
-        function display(self) { 
-          var num = 1; 
-          var sArr = self.getDataEtc().sentenceArray;   
-          for (var i in sArr) {
-            var sentenceItem = base.getItem(sArr[i]);
-            var textArray = sentenceItem.getDataEtc().textArray;
-            var sentence = textArray.join('');
-            //set data and publish to view
-            var view = base.getItem(self.getDataEtc().viewId);
-            var selection = (num === 1) ? true : false;
-            var elementId = 'Instance_' + num;
-            var thisData = {text: sentence, position: num, isSelected: selection, parentId: 'Instance', elementId: elementId, 
-              viewMarkupId: "Item view markup", newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
-            view.setSomeDataEtc({data: thisData}, self.getLocalId());
-            view.getUpdateFromFunction().call(view, self);
-            num++;
+        //create a variable for the new index, which is different than the index in inputArray
+        if (pub.distanceFromFocus < 2) {  
+          //sentenceIds is an object in which the keys are like in a sparse array, revealing the location of the sentences in inputArray
+          sentenceInfo = pub.data['1600']['Unchecked'][pub.selectedWord].sentenceInfo;
+          newLength = Object.keys(sentenceInfo).length;
+          if (pub.selectedWord != here.selectedWord) {
+            //old sentences have been erased; time to display new ones
+            this.setSomeDataEtc({selectedWord: pub.selectedWord, lastLength: newLength, nextPosition: 1}, this.getLocalId());
+            for (var i in sentenceInfo) {
+              display(i);
+            }
           }
-          self.setSomeDataEtc({isDisplayed: true});
+          else if (newLength == here.lastLength + 1) {
+            //there's just one new sentence to tack onto the displayed list
+            var where = pub.inputArray.length - 1;
+            display(where);
+            this.setSomeDataEtc({lastLength: newLength}, this.getLocalId());
+          }
+        }
+        function display(index) { 
+          here = self.getDataEtc();
+          var textArray = pub.inputArray[index];
+          var sentence = textArray.join('');
+          //set data and publish to view
+          var view = base.getItem(self.getDataEtc().viewId);
+          var selection = (here.nextPosition === 1) ? true : false;
+          var elementId = 'Instance_' + here.nextPosition;
+          self.setSomeDataEtc({nextPosition: here.nextPosition + 1}, self.getLocalId());
+          var thisData = {text: sentence, position: here.nextPosition, isSelected: selection, parentId: 'Instance', elementId: elementId, 
+            viewMarkupId: "Item view markup", newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
+          view.setSomeDataEtc({data: thisData}, self.getLocalId());
+          setTimeout(view.getUpdateFromFunction().call(view, self), 0);
         }//end display()
         
       }//end updateFrom
@@ -1508,40 +1497,127 @@ window.simplifier = simplifier = (function createSimplifier() {
     });//end create presenter
     
     //Req. 2.6
+    var callback = function callback(response, word, pub, self) {
+      if (response.charAt) {
+        console.log('string response from ajax');
+        
+      }
+      //store suggestions
+      var growingData = pub.data;
+      if (!growingData['1600']['Unchecked'][word].suggestions) {
+        growingData['1600']['Unchecked'][word].suggestions = {};
+      }
+      var suggestions = growingData['1600']['Unchecked'][word].suggestions;
+      if (!suggestions) {
+        suggestions = {};
+      }
+      var poS = '';
+      var synset = [];
+      for (var i in response) {
+        if (response[i].length == 0) {
+          console.log('broke')
+          break;
+        }
+        if (i == 0 || i%2 == 0) {
+          //this is part of Speech
+          poS = response[i].charAt(6);
+          switch(poS) {
+            case 'n': poS = 'noun'; break;
+            case 'a': 
+            case 's': poS = 'adj.'; break;
+            case 'r': poS = 'adv.'; break;
+            case 'v': poS = 'verb'; break;
+            default: poS = '?'; break;
+          }
+          if (!suggestions[poS]) {
+            suggestions[poS] = [];
+          }
+        }
+        else {
+          //this is a synset--a group of synonyms
+          synset = response[i];
+          //record which synset each suggestion is in, in case program needs to group them later.
+          var synsetNumber = (i+1)/2;
+          //assume it is hard until proven easy
+          var vocab = 'unlimited';
+          for (var index in synset) {
+            var synonym = synset[index];console.log(synonym)
+            //TODO check how easy the synonym is
+            //then store the synonym
+            suggestions[poS].push({suggestion: synonym, /*vocab: vocab,*/ synset: synsetNumber});
+          }//end for index in synset
+        }//end else
+      }
+      self.setSomeDataEtc({receivedFor: word, data: growingData}, self.getLocalId());
+    } //end callback for Replacement tool model ajax
+    
+    //Req. 2.6
     //Create Replacement tool model
     base.createItem({
       localId: "Replacement tool model",
       dataEtc: {
         suggestions: [],
-        selectedWord: "",
+        latestHardWords: [],
+        requested: {},
+        recievedFor: '',
         hardWord: "",
         distanceFromFocus: 4,
-        selectedItem: 0
+        selectedItem: 0,
+        data: {}
       },
       publisherIds: [
         "Hard Words tool model"
       ],
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc();
-        if (this.getDataEtc().distanceFromFocus != pub.distanceFromFocus && pub.selectedWord) {
-          //ajax for suggestionArray
-          //sort suggestionArray
-          //store suggestionArray
-          //but temporarily there is no such thing, so create an imitation
-          var r1 = {};
-          r1.suggestion = pub.selectedWord + ' first';
-          r1.pos = 'n';
-          r1.level = '3';
-          var r2 = {};
-          r2.suggestion = pub.selectedWord + ' second';
-          r2.pos = 'v';
-          r2.level = '6';
-          var rArray = [r1, r2];
-          this.setSomeDataEtc({suggestions: rArray, hardWord: pub.selectedWord, selectedWord: r1.suggestion, distanceFromFocus: pub.distanceFromFocus}, this.getLocalId());
-        }
-      }
+        var here = this.getDataEtc();
+        if (pub.distanceFromFocus < 2 && pub.latestHardWords.length) {
+          //ajax for suggestionArray if not already
+          var requested = here.requested;
+          var self = this;
+          for (var i in pub.latestHardWords) {
+            var word = pub.latestHardWords[i];
+            if (!requested[word]) {
+              try {
+                requestSuggestions(word, pub, self);
+              }
+              catch (e) {
+                console.log('CAUGHT: ' + e.message);
+                try {
+                  requestSuggestions(word, pub, self);
+                }
+                catch (e2) {
+                  console.log('CAUGHT SECOND: ' + e.message);
+                  $('#Replacement').append('<div id="replacement_error">Internet connection did not work to download suggestions. Try reload page later.</div>');
+                }
+              }
+              requested[word] = true;
+            }//end if requested
+          }//end for each lastest hard word
+          this.setSomeDataEtc({hardWord: pub.selectedWord, distanceFromFocus: pub.distanceFromFocus, latestHardWords: pub.latestHardWords, requested: requested, data: pub.data}, this.getLocalId());
+        }//end if
+      }//end updateFrom
     });//end create tool model
     
+    function requestSuggestions(word, pub, self, repeat) {
+      $.ajax({
+        url: "http://mc.superstring.org:8805/2/getsyns.php?q=" + word,
+        type: 'GET',
+        format: "json",
+        jsonp: false,
+        jsonpCallback: "callback",
+        dataType: 'jsonp',
+        cache: true
+      }).fail(function(jqXHR, textStatus) {
+        console.log('fail: ' + textStatus);
+        //try again once
+        if (!repeat) {
+          requestSuggestions(word, pub, self, true);
+        }
+      }).done(function(response) {
+        callback(response, word, pub, self);
+      });
+    }
     
     //Create 2.6 Replacement tool presenter  
     base.createItem({
@@ -1567,7 +1643,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     base.createItem({
       localId: "Replacement title model",
       dataEtc: {
-        text: '2.6 Replacement',
+        text: '2.6 Replacement (loading)',
         distanceFromFocus: 2,
         listModelId: "Replacement tool model",
         position: 0
@@ -1602,6 +1678,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       dataEtc: {
         distanceFromFocus: 2,
         listModelId: "Replacement tool model",
+        text: 'your choice here',
         position: 0
       },
       publisherIds: [
@@ -1616,7 +1693,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       dataEtc: {
         dataType: "html",
         requirements: ["doT.js"],
-        data: '<div data-theme="b" style="border: 0;" data-shadow="false" {{=it.newAttribute}} id="{{=it.elementId}}"  ><input type="text" id="replacement_input" value="{{=it.text}}" /></div>' 
+        data: '<div data-theme="b" style="border: 0;" data-shadow="false" {{=it.newAttribute}} id="{{=it.elementId}}"  ><input type="text" id="replacement_input" value="{{=it.text}}" /><label style=" border: 0; padding: 0px; margin: 0px 0px 0px 15px;">Default<input type="checkbox" id="replacement_isDefault" checked="checked" data-mini="true"  /></label></div>' 
       },
       updateFrom: function(viewUtility) {
         //publisher is view utility
@@ -1626,6 +1703,9 @@ window.simplifier = simplifier = (function createSimplifier() {
         var self = this;
         //prepare to collect user events and pass them to presenter
         if (inputEventHandler) return;
+        $('#replacement_isDefault').on('change', function(e) {
+          console.log('successful uncheck');
+        });
         $('#replacement_input').closest('span').attr('id', 'replacer_span');
         $('#replacer_span').keypress(function (evt) {
           //Deterime where our character code is coming from within the event
@@ -1678,85 +1758,62 @@ window.simplifier = simplifier = (function createSimplifier() {
         isDisplayed: false
       },
       publisherIds: [
-        "Hard Words tool model",
         "Replacement tool model"
       ],
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc(); 
         var here = this.getDataEtc();
-        //if pub.lastChange is not momentarily undefined and it's different, do another ajax and sync the number
-        if (pub.lastChange && pub.lastChange != here.lastAjax) {
-          this.setSomeDataEtc({lastAjax: pub.lastChange}, this.getLocalId());
-          $.ajax({
-            url: "http://mc.superstring.org:8805/2/getsyns.php?q=word",
-            type: 'GET',
-            format: "json",
-            jsonp: false,
-            jsonpCallback: "callback",
-            dataType: 'jsonp',
-            cache: true
-          }).done(function( response ) {
-            console.log(response[1]);
-          });
-        } 
-        //if publisher is Hard Words tool model, get hard word and look it up in hard words to find replacements
-        if (pub.hardWords && pub.distanceFromFocus < 2) {
-          var word = pub.selectedWord; 
-          if (word == here.hardWord) {
+        //get hard word and look it up in hard words to find replacements
+        if (pub.distanceFromFocus < 2 && pub.receivedFor) {
+          var word = pub.hardWord; 
+          //if there is no change or no hard words, quit
+          if (word == here.hardWord || !pub.data['1600']) {
             return;
           }
-          //else if the selectedWord has changed and replacements are displayed for a previous selected word, erase all and start over
-          if (here.hardWord) {
-            this.setSomeDataEtc({hardWord: '', isDisplayed: false}, this.getLocalId());
-            $('#Replacement_0').closest('form').remove();
-            var model = base.getItem("Replacement tool model");
-            model.setSomeDataEtc({selectedItem: 0}, this.getLocalId());
-            return;
+          //There has been a change in the selected hard word.
+          //First, if there was an error message, remove it.
+          $('#replacement_error').remove();
+          //Also, remove any previous suggested replacements
+          $('#Replacement_1').nextAll().closest('div').remove();
+          //else try to find it in storage and display
+          var suggestions = pub.data['1600']['Unchecked'][word].suggestions;
+          var suggestArray, i, suggestion, poS, whole, view, selection, num = 2, elementId, thisData, newAttr;
+          if (suggestions) {
+            ;console.log('found suggestions["noun"]: ' + suggestions['noun'] + ' for word: ' + word)
           }
-          //else there are no suggested replacements displayed yet, so go ahead and display them.
-          //find the stored hard word, find its suggested replacements (suggestions), and refer to that as suggestionArray
-          
-          if (!here.isDisplayed && here.selectedIndex) {
-            display(this);
-          }
-        }
-        else if (pub.dataType == "html") {
-        //TODO update for observers
-        }
-        else if (publisher.getLocalId() === 'Replacement tool model') { 
-          if (pub.distanceFromFocus < 2) {
-            this.setSomeDataEtc({selectedIndex: 1}, this.getLocalId());
-          }
-          else {
-            //title will remove all?
-          }
-        }
-        
-        function display(self) { 
-          var num = 2; 
-          var rArr = self.getDataEtc().suggestionArray; 
-          for (var i in rArr) {
-            var suggestion = rArr[i].suggestion;
-            var pos = rArr[i].pos;
-            var level = rArr[i].level;
-            var whole = suggestion + ' (' + level + ', ' + pos + ')';
-            //set data and publish to view
-            var view = base.getItem(self.getDataEtc().viewId);
-            var selection = false;
-            if (num === 2) {
-              selection = true;
+          if (!suggestions || !Object.keys(suggestions).length) {
+            if (!$('#replacement_error').length) {
+              $('#Replacement').append('<div id="replacement_error">No replacement suggestions are found in database.</div>');
             }
-            var selection = (num === 2) ? true : false;
-            var elementId = 'Replacement_' + num;
-            var thisData = {text: whole, position: num, isSelected: selection, parentId: 'Replacement', elementId: elementId, 
-              viewMarkupId: "Item view markup", newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
-            view.setSomeDataEtc({data: thisData}, self.getLocalId());
-            view.getUpdateFromFunction().call(view, self);
-            num++;
+            $('#replacement_input').val(word);
           }
-          self.setSomeDataEtc({isDisplayed: true}, self.getLocalId());
-        }//end display()
-        
+          for (poS in suggestions) {
+            suggestArray = suggestions[poS];
+            for (i in suggestArray) {
+              suggestion = suggestArray[i].suggestion;
+              whole = suggestion + ' (' + poS + ')' //later add vocab/level
+              view = base.getItem(this.getDataEtc().viewId);
+              selection = false;
+              newAttr = "";
+              if (num === 2) {
+                selection = true;
+                newAttr = "data-icon='arrow-r' data-iconpos='right'"
+                //Put the new selection in the field
+                $('#replacement_input').val(suggestion);
+              }
+              selection = (num === 2) ? true : false;
+              elementId = 'Replacement_' + num;
+              thisData = {text: whole, position: num, isSelected: selection, parentId: 'Replacement', elementId: elementId, 
+                viewMarkupId: "Item view markup", newAttribute: newAttr}; 
+              view.setSomeDataEtc({data: thisData}, this.getLocalId());
+              view.getUpdateFromFunction().call(view, this);
+              num++;
+            }
+          }
+          $('#Replacement').find('.ui-btn-text').first().text("2.6 Replacement");
+          $('#Replacement').closest('form').trigger('create');
+          
+        }//end if
       }//end updateFrom
     });//end create presenter
     var result;
@@ -1766,10 +1823,17 @@ window.simplifier = simplifier = (function createSimplifier() {
   return {
     go: go
   }
-  //TODO: reactivate the logging in Hard Words tool model on 1048 and 1068 to debug why it runs so many times on changing step
-  //Oh I know why: I shouldn't keep adding the same event handler to all inputs every time something displays!!!
   
 })();
   
+var gOldOnError = window.onerror;
+// Override previous handler.
+window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
+  if (gOldOnError)
+    // Call previous handler.
+    return gOldOnError(errorMsg, url, lineNumber);
 
+  // Just let default handler run.
+  return false;
+}
  
