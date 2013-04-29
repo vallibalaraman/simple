@@ -12,7 +12,7 @@ level: object (max of 6 levels)
         partOfSpeech: suggestion (string)
       "sentenceInfo": object
         sentenceId: object (sentenceId can be inputSentenceId or outputSentenceId)
-          textArrayIndex: object (this and contents can best be added in Analyzer if needed since a hard word may be found more than once in a sentence)
+          [[textArrayIndex: object (this and contents can best be added in Analyzer if needed since a hard word may be found more than once in a sentence)]]
             "replacement": suggestion (string)
             "partOfSpeech": string
       "suggestions": object
@@ -21,9 +21,8 @@ level: object (max of 6 levels)
             "suggestion": string
             "vocab": string
             "synset": number
-inputSentenceId: object
-  "textArray": array
+inputSentenceId: array (was object)
+  number: array (was "textArray": array)
     number: string
-outputSentenceId: object
-  "textArray": array
-    number: string
+outputSentenceId: object/sparse Array
+   number: string

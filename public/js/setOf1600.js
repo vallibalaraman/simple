@@ -1600,4 +1600,5 @@ var setOf1600 = {
 'gram': [{pos: 'n', def: '1000 milligrams'}],
 'ton': [{ref: 'metric ton'}],
 'metric ton': [{pos: 'n', def: '1000 kilograms'}],
-'tonne': [{pos: 'n', def: '1000 kilograms'}]}
+'tonne': [{pos: 'n', def: '1000 kilograms'}],
+'me': [{pos: 'pro', def: 'the person speaking'}]}

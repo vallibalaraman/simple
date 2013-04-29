@@ -167,7 +167,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     });  
     
     function presenterUpdateFrom(publisher) {
-      var pInfo = publisher.getDataEtc();
+      var pInfo = publisher.getDataEtc(); 
       var here = this.getDataEtc(); 
       var model = base.getItem(here.modelId);
       var position = model.getDataEtc().position; 
@@ -182,7 +182,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         if (pInfo.distanceFromFocus === 1 || pInfo.distanceFromFocus === 0) {
           //If the data is not displayed, display it
           var displayable = (!$('#' + here.elementId).length);
-          if (!displayable && publisher.getLocalId() == "Instance tool model" && pInfo.selectedWord != here.selectedWord && $('#Instance_1' ).length) {
+          if (!displayable && publisher.getLocalId() == "Instance tool model" && pInfo.hardWord != here.hardWord && $('#Instance_1' ).length) {
             //erase what's been displayed and redisplay
             $('#' + here.elementId).closest('fieldset').empty();
             refresh();
@@ -207,10 +207,6 @@ window.simplifier = simplifier = (function createSimplifier() {
           //$('#' + here.elementId).closest('form').remove()
           //this.setSomeDataEtc({isDisplayed: false}, this.getLocalId());
         } */
-        //If a replacement suggestion is selected, display it in field
-        if (this.getLocalId() == "Replacement Input Presenter") {
-          $('#' + here.elementId).text(listModel.getDataEtc().selectedWord);
-        }
       }    
       //check if it's view
       else if (publisher.getLocalId() == here.viewMarkupId) {
@@ -307,6 +303,7 @@ window.simplifier = simplifier = (function createSimplifier() {
               $('#Instance').closest('form').hide();
               $('#PoS').closest('form').hide();
               $('#Replacement').closest('form').hide();
+              $('#Result').closest('form').hide();
               $('#Method').closest('form').show();
               $('#Input').closest('form').show();
             }
@@ -323,6 +320,7 @@ window.simplifier = simplifier = (function createSimplifier() {
               $('#Instance').closest('form').show();
               $('#PoS').closest('form').show();
               $('#Replacement').closest('form').show();
+              $('#Result').closest('form').show();
             }
           }
           //Req. 4.2.4.3 If user clicks Step 3 and is not already there, hide Step 2 and Step 1 tools and show Step 3 tools.
@@ -335,6 +333,7 @@ window.simplifier = simplifier = (function createSimplifier() {
               $('#Instance').closest('form').hide();
               $('#PoS').closest('form').hide();
               $('#Replacement').closest('form').hide();
+              $('#Result').closest('form').hide();
               $('#Method').closest('form').hide();
               $('#Input').closest('form').hide();
             }
@@ -359,13 +358,6 @@ window.simplifier = simplifier = (function createSimplifier() {
           $('#' + selectedId).buttonMarkup({theme: 'b', corners: false, icon: arrow, iconpos: iconPosition});
           //if clicked, update presenter, which will allow it to update model
           var presenter;
-          if (idStarter == "#Hard") {
-            presenter = base.getItem('Hard Words presenter');
-            presenter.setSomeDataEtc({selectedIndex: selectedInt, selectedWord: $('#' + selectedId).val()}, self.getLocalId());
-            presenter.getUpdateFromFunction().call(presenter, self); 
-            $('#page').trigger('create');
-            return;
-          }
           //try to recreate what presenter is based on convention
           var presString = idArray[0] + ' presenter';
           if (idArray[0] === 'Step' || idArray[0] === 'Method') {
@@ -373,11 +365,16 @@ window.simplifier = simplifier = (function createSimplifier() {
           }
           presenter = base.getItem(presString);
           if (!presenter) return;
-          presenter.setSomeDataEtc({isSelected: true}, self.getLocalId());
+          //give appropriate details to different objects
+          if (idArray[0] === 'Hard' || idArray[0] === 'Replacement') {
+            presenter.setSomeDataEtc({selectedIndex: selectedInt, selectedWord: $('#' + selectedId).val()}, self.getLocalId());
+          }
+          else {
+            presenter.setSomeDataEtc({isSelected: true}, self.getLocalId());
+          }
           presenter.getUpdateFromFunction().call(presenter, self);
-          
-          
-        $('#page').trigger('create');
+          //refresh css
+          $('#page').trigger('create');
           //console.log('on click ending: ' + new Date())
         });//END .ON?
         
@@ -1076,6 +1073,7 @@ window.simplifier = simplifier = (function createSimplifier() {
         latestHardWords: [],
         inputArray: [],
         data: {},
+        selectedType: '',
         isComplete: false
       },
       publisherIds: [
@@ -1101,21 +1099,22 @@ window.simplifier = simplifier = (function createSimplifier() {
           //function func() {
             if (e.data.status === 'finished') {
               //update counts
+              var uncheckedName = $('#Type_1').parent().find('.ui-btn-text').first().text();
+              $('#Type_1').parent().find('.ui-btn-text').first().text(uncheckedName + " (" + hCount + ")");
+              //remove "(loading)"
               $('#Hard').find('.ui-btn-text').first().text("2.3 Hard Word");
               //refresh css
               setTimeout(refresh, 0);
               return;
             }
-            
-            //;console.log("Worker said : " + e.data.textArray.join('') + 'From: ' + e.data.whence + ', status: ' + e.data.status );
             newHardWords = [];
             selected = here.selectedWord;
             growingInput = here.inputArray;
             growingInput.push(e.data.textArray);
             growingData = pub.data;
             for (var word in e.data.hardWords) {
-              if (!growingData['1600']['Unchecked'][word]) {
-                growingData['1600']['Unchecked'][word] = e.data.hardWords[word];
+              if (!growingData['1600'][pub.selectedType][word]) {
+                growingData['1600'][pub.selectedType][word] = e.data.hardWords[word];
                 newHardWords.push(word);
                 //Req. 2.3.3
                 if (hCount++ == 4) {
@@ -1125,11 +1124,11 @@ window.simplifier = simplifier = (function createSimplifier() {
                   selected = word;
                 }
               }
-              if (!growingData['1600']['Unchecked'][word].sentenceInfo) {
-                growingData['1600']['Unchecked'][word].sentenceInfo = {};
+              if (!growingData['1600'][pub.selectedType][word].sentenceInfo) {
+                growingData['1600'][pub.selectedType][word].sentenceInfo = {};
               }
-              if (!growingData['1600']['Unchecked'][word].sentenceInfo[growingInput.length-1]) {
-                growingData['1600']['Unchecked'][word].sentenceInfo[growingInput.length-1] = {};
+              if (!growingData['1600'][pub.selectedType][word].sentenceInfo[growingInput.length-1]) {
+                growingData['1600'][pub.selectedType][word].sentenceInfo[growingInput.length-1] = {};
               }
 
             }
@@ -1137,7 +1136,7 @@ window.simplifier = simplifier = (function createSimplifier() {
             self.setSomeDataEtc({selectedWord: selected, inputArray: growingInput, data: growingData, latestHardWords: newHardWords}, self.getLocalId());
           //}
         }
-        this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, isComplete: true}, this.getLocalId());
+        this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, isComplete: true, selectedType: pub.selectedType}, this.getLocalId());
         
         //TODO add something to change selected type
       }//end updateFrom
@@ -1198,7 +1197,7 @@ window.simplifier = simplifier = (function createSimplifier() {
     
     //create presenter for auto-generated model data from Hard Words tool model
     base.createItem({
-      localId: "Hard Words presenter",
+      localId: "Hard presenter",
       dataEtc: {
         viewId: "View utility",
         modelId: "Hard Words tool model",
@@ -1250,8 +1249,10 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Instance tool model",
       dataEtc: {
         distanceFromFocus: 4,
-        selectedWord: '',
+        hardWord: '',
         inputArray: [],
+        selectedSentence: '',
+        selectedSentenceIndex: undefined,
         data: undefined
       },
       publisherIds: [
@@ -1260,7 +1261,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc();
         if (pub.distanceFromFocus < 2 && pub.selectedWord) {
-          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, data: pub.data, inputArray: pub.inputArray, selectedWord: pub.selectedWord});
+          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, data: pub.data, inputArray: pub.inputArray, hardWord: pub.selectedWord, selectedType: pub.selectedType});
         }
       }
     });//end create Instance tool model
@@ -1326,7 +1327,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Instance presenter",
       dataEtc: {
         viewId: "View utility",
-        selectedWord: '',
+        hardWord: '',
         sentenceArray: [],
         selectedIndex: 0,
         lastLength: 0,
@@ -1345,11 +1346,11 @@ window.simplifier = simplifier = (function createSimplifier() {
         //create a variable for the new index, which is different than the index in inputArray
         if (pub.distanceFromFocus < 2) {  
           //sentenceIds is an object in which the keys are like in a sparse array, revealing the location of the sentences in inputArray
-          sentenceInfo = pub.data['1600']['Unchecked'][pub.selectedWord].sentenceInfo;
+          sentenceInfo = pub.data['1600'][pub.selectedType][pub.hardWord].sentenceInfo;
           newLength = Object.keys(sentenceInfo).length;
-          if (pub.selectedWord != here.selectedWord) {
+          if (pub.hardWord != here.hardWord) {
             //old sentences have been erased; time to display new ones
-            this.setSomeDataEtc({selectedWord: pub.selectedWord, lastLength: newLength, nextPosition: 1}, this.getLocalId());
+            this.setSomeDataEtc({hardWord: pub.hardWord, lastLength: newLength, nextPosition: 1}, this.getLocalId());
             for (var i in sentenceInfo) {
               display(i);
             }
@@ -1361,7 +1362,7 @@ window.simplifier = simplifier = (function createSimplifier() {
             this.setSomeDataEtc({lastLength: newLength}, this.getLocalId());
           }
         }
-        function display(index) { 
+        function display(index) {
           here = self.getDataEtc();
           var textArray = pub.inputArray[index];
           var sentence = textArray.join('');
@@ -1373,7 +1374,12 @@ window.simplifier = simplifier = (function createSimplifier() {
           var thisData = {text: sentence, position: here.nextPosition, isSelected: selection, parentId: 'Instance', elementId: elementId, 
             viewMarkupId: "Item view markup", newAttribute: "data-icon='arrow-r' data-iconpos='right'"}; 
           view.setSomeDataEtc({data: thisData}, self.getLocalId());
-          setTimeout(view.getUpdateFromFunction().call(view, self), 0);
+          view.getUpdateFromFunction().call(view, self);
+          var model = base.getItem("Instance tool model");
+          if (selection) {
+            //tell model what sentence is selected so observers can be alerted or fetch required info
+            model.setSomeDataEtc({selectedSentenceIndex: index, selectedSentence: sentence}, self.getLocalId());
+          }
         }//end display()
         
       }//end updateFrom
@@ -1500,14 +1506,13 @@ window.simplifier = simplifier = (function createSimplifier() {
     var callback = function callback(response, word, pub, self) {
       if (response.charAt) {
         console.log('string response from ajax');
-        
       }
       //store suggestions
       var growingData = pub.data;
-      if (!growingData['1600']['Unchecked'][word].suggestions) {
-        growingData['1600']['Unchecked'][word].suggestions = {};
+      if (!growingData['1600'][pub.selectedType][word].suggestions) {
+        growingData['1600'][pub.selectedType][word].suggestions = {};
       }
-      var suggestions = growingData['1600']['Unchecked'][word].suggestions;
+      var suggestions = growingData['1600'][pub.selectedType][word].suggestions;
       if (!suggestions) {
         suggestions = {};
       }
@@ -1515,7 +1520,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       var synset = [];
       for (var i in response) {
         if (response[i].length == 0) {
-          console.log('broke')
+          //console.log('broke')
           break;
         }
         if (i == 0 || i%2 == 0) {
@@ -1541,7 +1546,9 @@ window.simplifier = simplifier = (function createSimplifier() {
           //assume it is hard until proven easy
           var vocab = 'unlimited';
           for (var index in synset) {
-            var synonym = synset[index];console.log(synonym)
+            var synonym = synset[index];
+            //remove any underscores, replace with spaces ('g' is global flag)
+            synonym = synonym.replace('_', ' ', 'g');
             //TODO check how easy the synonym is
             //then store the synonym
             suggestions[poS].push({suggestion: synonym, /*vocab: vocab,*/ synset: synsetNumber});
@@ -1563,57 +1570,62 @@ window.simplifier = simplifier = (function createSimplifier() {
         hardWord: "",
         distanceFromFocus: 4,
         selectedItem: 0,
+        selectedType: '',
+        replacement: '',
         data: {}
       },
       publisherIds: [
-        "Hard Words tool model"
+        "Hard Words tool model",
+        "Instance tool model"
       ],
       updateFrom: function(publisher) {
         var pub = publisher.getDataEtc();
+        var pubId = publisher.getLocalId();
         var here = this.getDataEtc();
-        if (pub.distanceFromFocus < 2 && pub.latestHardWords.length) {
+        //if publisher is Hard Words tool model, get hard words and create suggestion list
+        if (pubId == "Hard Words tool model" && pub.distanceFromFocus < 2 && pub.latestHardWords.length) {
           //ajax for suggestionArray if not already
           var requested = here.requested;
           var self = this;
           for (var i in pub.latestHardWords) {
             var word = pub.latestHardWords[i];
             if (!requested[word]) {
-              try {
-                requestSuggestions(word, pub, self);
-              }
-              catch (e) {
-                console.log('CAUGHT: ' + e.message);
-                try {
-                  requestSuggestions(word, pub, self);
-                }
-                catch (e2) {
-                  console.log('CAUGHT SECOND: ' + e.message);
-                  $('#Replacement').append('<div id="replacement_error">Internet connection did not work to download suggestions. Try reload page later.</div>');
-                }
-              }
+              setTimeout(requestSuggestions(word, pub, self), 0);
               requested[word] = true;
             }//end if requested
           }//end for each lastest hard word
-          this.setSomeDataEtc({hardWord: pub.selectedWord, distanceFromFocus: pub.distanceFromFocus, latestHardWords: pub.latestHardWords, requested: requested, data: pub.data}, this.getLocalId());
-        }//end if
+          this.setSomeDataEtc({hardWord: pub.selectedWord, distanceFromFocus: pub.distanceFromFocus, latestHardWords: pub.latestHardWords, requested: requested, data: pub.data, selectedType: pub.selectedType, replacement: pub.selectedWord}, this.getLocalId());
+        }//end if hard words
+        if (pubId == "Instance tool model") {
+          //check for replacement user may have chosen for this particular sentence
+          var chosen = pub.data['1600'][pub.selectedType][pub.hardWord].sentenceInfo[pub.selectedSentenceIndex].replacement;
+          //collect info for Replacement input and Results tool to use
+          this.setSomeDataEtc({replacement: chosen, sentenceIndex: pub.selectedSentenceIndex, sentence: pub.selectedSentence}, this.getLocalId());
+        }
       }//end updateFrom
     });//end create tool model
     
     function requestSuggestions(word, pub, self, repeat) {
+      ;console.log('starting to ajax for: ' + word)
       $.ajax({
         url: "http://mc.superstring.org:8805/2/getsyns.php?q=" + word,
         type: 'GET',
         format: "json",
         jsonp: false,
         jsonpCallback: "callback",
+        contentType: "application/json",
         dataType: 'jsonp',
         cache: true
       }).fail(function(jqXHR, textStatus) {
-        console.log('fail: ' + textStatus);
+        console.log('responseText: ' + jqXHR.responseText + ', headers: ' + jqXHR.getAllResponseHeaders());
+        callback([[]], word, pub, self);
         //try again once
+        /*
         if (!repeat) {
+          console.log('trying a second time')
           requestSuggestions(word, pub, self, true);
         }
+        */
       }).done(function(response) {
         callback(response, word, pub, self);
       });
@@ -1704,26 +1716,27 @@ window.simplifier = simplifier = (function createSimplifier() {
         //prepare to collect user events and pass them to presenter
         if (inputEventHandler) return;
         $('#replacement_isDefault').on('change', function(e) {
-          console.log('successful uncheck');
+          console.log('this.checked: ' + this.checked)
+          //programmatic change: $('#replacement_isDefault').prop("checked", false).checkboxradio('refresh')
+          
+          
         });
         $('#replacement_input').closest('span').attr('id', 'replacer_span');
         $('#replacer_span').keypress(function (evt) {
           //Deterime where our character code is coming from within the event
           var charCode = evt.charCode || evt.keyCode;
           if (charCode  == 13) { //Enter key's keycode
-          //without this, cpu crashes, at least in chrome 26
-          evt.preventDefault()
-          $('#replacement_input').trigger('change');
+          //without this, cpu overloads and crashes on Enter, at least in chrome 26
+            evt.preventDefault()
+            $('#replacement_input').trigger('change');
           }
         });
-        $('#replacement_input').on("change", function(e) {
-          e.preventDefault();
-          //console.log('changed to: ' + $('#replacement_input').val());
-          
-          
-        });//END .ON?
+        $('#replacement_input').on('keyup', function (evt) {
+          var model = base.getItem("Replacement tool model");
+          model.setSomeDataEtc({replacement: $(this).val()}, self.getLocalId());
+        });
         //prevent multiple event handlers
-          inputEventHandler = true;
+        inputEventHandler = true;
       }
     });
     
@@ -1751,6 +1764,7 @@ window.simplifier = simplifier = (function createSimplifier() {
       localId: "Replacement presenter",
       dataEtc: {
         viewId: "View utility",
+        modelId: "Replacement tool model",
         hardWord: '',
         suggestionArray: [],
         selectedIndex: 0,
@@ -1776,49 +1790,289 @@ window.simplifier = simplifier = (function createSimplifier() {
           //Also, remove any previous suggested replacements
           $('#Replacement_1').nextAll().closest('div').remove();
           //else try to find it in storage and display
-          var suggestions = pub.data['1600']['Unchecked'][word].suggestions;
+          var suggestions = pub.data['1600'][pub.selectedType][word].suggestions;
           var suggestArray, i, suggestion, poS, whole, view, selection, num = 2, elementId, thisData, newAttr;
-          if (suggestions) {
-            ;console.log('found suggestions["noun"]: ' + suggestions['noun'] + ' for word: ' + word)
-          }
-          if (!suggestions || !Object.keys(suggestions).length) {
-            if (!$('#replacement_error').length) {
-              $('#Replacement').append('<div id="replacement_error">No replacement suggestions are found in database.</div>');
-            }
-            $('#replacement_input').val(word);
+          if (pub.replacement != pub.hardWord) {
+            //the user has already chosen a replacement, so list that first
+            display(pub.replacement, '', this);
           }
           for (poS in suggestions) {
             suggestArray = suggestions[poS];
             for (i in suggestArray) {
               suggestion = suggestArray[i].suggestion;
-              whole = suggestion + ' (' + poS + ')' //later add vocab/level
-              view = base.getItem(this.getDataEtc().viewId);
-              selection = false;
-              newAttr = "";
-              if (num === 2) {
-                selection = true;
-                newAttr = "data-icon='arrow-r' data-iconpos='right'"
-                //Put the new selection in the field
-                $('#replacement_input').val(suggestion);
-              }
-              selection = (num === 2) ? true : false;
-              elementId = 'Replacement_' + num;
-              thisData = {text: whole, position: num, isSelected: selection, parentId: 'Replacement', elementId: elementId, 
-                viewMarkupId: "Item view markup", newAttribute: newAttr}; 
-              view.setSomeDataEtc({data: thisData}, this.getLocalId());
-              view.getUpdateFromFunction().call(view, this);
-              num++;
+               //later add vocab/level
+              display(suggestion, '(' + poS + ')', this);
             }
           }
+          //add original hard word as last suggestion
+          display(pub.hardWord, '(hard)', this);
+          if (!suggestions || !Object.keys(suggestions).length) {
+            if (!$('#replacement_error').length) {
+              $('#Replacement').append('<div id="replacement_error">No replacement suggestions are found in database.</div>');
+            }
+          }
+          //remove the "(loading)" from title
           $('#Replacement').find('.ui-btn-text').first().text("2.6 Replacement");
+          //refresh css
           $('#Replacement').closest('form').trigger('create');
           
         }//end if
+        else if (pub.distanceFromFocus < 2) {
+          var self = this;
+          setTimeout(function() {
+            if (!$('#Replacement_2').length) {
+              //taking too long, probably no internet connection
+              //add original hard word as last suggestion
+              num = 2;
+              display(pub.hardWord, '(hard)', self);
+              if (!$('#replacement_error').length) {
+                $('#Replacement').append('<div id="replacement_error">Nothing happened. Maybe you have no internet connection. Continue without suggestions or, if you want suggestions, try reload later.</div>');
+              }
+              //remove the "(loading)" from title
+              $('#Replacement').find('.ui-btn-text').first().text("2.6 Replacement");
+              //refresh css
+              $('#Replacement').closest('form').trigger('create');
+            }
+          }, 4000);
+        }
+        else if (here.selectedWord) {
+          // view updated us on click and is letting us know
+          var realSelection = here.selectedWord.split(' (')[0]
+          $('#replacement_input').val(realSelection)//.trigger('keyup');
+          //var model = base.getItem(here.modelId);
+          //model.setSomeDataEtc({selectedWord: here.selectedWord}, this.getLocalId());
+        }
+        function display(suggestion, moreText, self) {
+          view = base.getItem(self.getDataEtc().viewId);
+          selection = false;
+          newAttr = "";
+          if (num === 2) {
+            selection = true;
+            newAttr = "data-icon='arrow-r' data-iconpos='right'"
+            //Put the new selection in the field
+            $('#replacement_input').val(suggestion)//.trigger('keyup');
+          }
+          selection = (num === 2) ? true : false;
+          elementId = 'Replacement_' + num;
+          var text = suggestion + ' ' + moreText;
+          thisData = {text: text, position: num, isSelected: selection, parentId: 'Replacement', elementId: elementId, 
+            viewMarkupId: "Item view markup", newAttribute: newAttr}; 
+          view.setSomeDataEtc({data: thisData}, self.getLocalId());
+          view.getUpdateFromFunction().call(view, self);
+          num++;
+        }
       }//end updateFrom
     });//end create presenter
-    var result;
-    function testAnalyze(inputText) {
-    }
+    
+    
+    //Req. 2.7
+    //Create Result tool model
+    base.createItem({
+      localId: "Result tool model",
+      dataEtc: {
+        distanceFromFocus: 4,
+        data: {},
+        text: '',
+        sentenceIndex: -1,
+        outputSentences: []
+      },
+      publisherIds: [
+        "Replacement tool model",
+      ],
+      updateFrom: function(publisher) {
+        var pub = publisher.getDataEtc();
+        var pubId = publisher.getLocalId();
+        var here = this.getDataEtc();
+        if (pubId == "Replacement tool model" && pub.distanceFromFocus < 2) {
+          //modify active sentence by replacing hard word with replacement word
+          var changingText = pub.sentence;
+          var replacement = pub.replacement || '';
+          var hardWord = pub.hardWord; 
+          //var allSuchHardWords = '/' + hardWord + '/gm';
+          while (hardWord != replacement && changingText.indexOf(hardWord) != -1) {
+            changingText = changingText.replace(hardWord, replacement);
+          }
+          //make sure when replacement is made it is saved in hard word-sentence-replacement
+          var changingData = pub.data;
+          var sentenceData = changingData['1600'][pub.selectedType][hardWord].sentenceInfo[pub.sentenceIndex] || {};
+          sentenceData.replacement = replacement;
+          changingData['1600'][pub.selectedType][hardWord].sentenceInfo[pub.sentenceIndex] = sentenceData;
+          //save for output with a key parallel to the replaced text in inputArray (so outputSentences will be sparse, and no join required for output)
+          var outputSentences = here.outputSentences || [];// {} would work too
+          outputSentences[pub.sentenceIndex] = changingText;
+          //store modified sentence so observers (i.e. presentation layer and output) can use it
+          this.setSomeDataEtc({distanceFromFocus: pub.distanceFromFocus, data: changingData, text: changingText, sentenceIndex: pub.sentenceIndex, selectedType: pub.selectedType, inputArray: pub.inputArray, outputSentences: outputSentences, lastReplacement: pub.replacement}, this.getLocalId());
+        }
+      }//end updateFrom
+    });//end create tool model
+    
+    //Create 2.7 Result tool presenter  
+    base.createItem({
+      localId: "Result tool presenter",
+      dataEtc: {
+        elementId: "Result", 
+        orientation: "vertical", 
+        newAttribute: "style='display: inline-block; width: 200px;'",
+        modelId: "Result tool model",
+        viewId: "View utility",
+        viewMarkupId: "List view markup",
+        parentId: "page",
+        selectedItem: 0,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Result tool model"
+      ],
+      updateFrom: presenterUpdateFrom
+    });
+    
+    //Create Result title model
+    base.createItem({
+      localId: "Result title model",
+      dataEtc: {
+        text: '2.7 Result',
+        distanceFromFocus: 2,
+        listModelId: "Result tool model",
+        position: 0
+      },
+      publisherIds: [
+        "Result tool model"
+      ],
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    base.createItem({
+      localId: "Result title presenter",
+      dataEtc: {
+        elementId: "Result_0", 
+        modelId: "Result title model",
+        viewId: "View utility",
+        viewMarkupId: "Item view markup",
+        newAttribute: "disabled='disabled'",
+        parentId: "Result",
+        isSelected: false,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Result title model"
+      ],
+      updateFrom: presenterUpdateFrom
+    });//end create presenter
+    
+    //Create Result input model
+    base.createItem({
+      localId: "Result input model",
+      dataEtc: {
+        distanceFromFocus: 2,
+        listModelId: "Result tool model",
+        text: 'Modified sentence coming here...',
+        position: 0
+      },
+      publisherIds: [
+        "Result tool model"
+      ],
+      updateFrom: itemModelUpdateFrom
+    });
+    
+    //the Result view markup
+    base.createItem({
+      localId: "Result view markup",
+      dataEtc: {
+        dataType: "html",
+        requirements: ["doT.js"],
+        data: '<div data-theme="b" style="border: 0;" data-shadow="false" {{=it.newAttribute}} id="{{=it.elementId}}"  ><textarea id="Result_textarea" >{{=it.text}}</textarea><label style=" border: 0; padding: 0px;">Approve<input type="checkbox" id="Result_approve" data-mini="true"  /></label></div>' 
+      },
+      updateFrom: function(viewUtility) {
+        //publisher is view utility
+        //var d = this.getDataEtc(); 
+        //console.log('itemview: ' + viewUtility.getLocalId() + ' ' + counter++)
+        //console.log('view markup has: Step: ' + d.Step + ', Method: ' + d.Method)
+        var self = this;
+        //prepare to collect user events and pass them to presenter
+        if (inputEventHandler) return;
+        
+        $('#Result_approve').parent().on('click', function(e) {
+          console.log('e.data: ' + e.data)
+          var model = base.getItem('Result tool model');
+          model.setSomeDataEtc({approved: true}, self.getLocalId());
+        });
+        $('#Result_textarea').closest('span').attr('id', 'replacer_span');
+        $('#replacer_span').keypress(function (evt) {
+          //Deterime where our character code is coming from within the event
+          var charCode = evt.charCode || evt.keyCode;
+          if (charCode  == 13) { //Enter key's keycode
+          //without this, cpu crashes, at least in chrome 26
+          evt.preventDefault()
+          $('#Result_textarea').trigger('change');
+          }
+        });
+        $('#Result_textarea').on("change", function(e) {
+          e.preventDefault();
+          //console.log('changed to: ' + $('#Result_textarea').val());
+          
+          
+        });//END .ON?
+        //prevent multiple event handlers
+          inputEventHandler = true;
+      }
+    });
+    
+    base.createItem({
+      localId: "Result input presenter",
+      dataEtc: {
+        elementId: "Result_1", 
+        modelId: "Result tool model",
+        viewId: "View utility",
+        viewMarkupId: "Result view markup",
+        newAttribute: "disabled='disabled'",
+        parentId: "Result",
+        isSelected: false,
+        isDisplayed: false
+      },
+      publisherIds: [
+        "Result tool model"
+      ],
+      updateFrom: function (publisher) {
+        var pInfo = publisher.getDataEtc(); 
+        var here = this.getDataEtc(); 
+        var model = base.getItem(here.modelId);
+        var position = model.getDataEtc().position; 
+        var listModel = base.getItem(model.getDataEtc().listModelId);
+        if (!listModel) {
+          //this is a presenter for a listModel
+          listModel = model;
+        }
+        //check if it's model
+        if ("distanceFromFocus" in pInfo) {
+          //this should be model
+          if (pInfo.distanceFromFocus === 1 || pInfo.distanceFromFocus === 0) {
+            //If the data is not displayed, display it
+            var displayable = (!$('#' + here.elementId).length);
+            if (displayable) {
+              //set data and publish, allowing presentation function to display view
+              var view = base.getItem(this.getDataEtc().viewId);
+              this.setSomeDataEtc(pInfo, this.getLocalId());
+              //this.setSomeDataEtc({text: pInfo.text, position: pInfo.position}, this.getLocalId());
+              view.setSomeDataEtc({data: here}, this.getLocalId());
+              view.getUpdateFromFunction().call(view, this);
+              this.setSomeDataEtc({isDisplayed: true});
+            } 
+            else {
+              //already displayed, but need to change value of textarea
+              $('#Result_textarea').val(pInfo.text);
+            }
+          }
+        }
+        //check if it's view
+        else if (publisher.getLocalId() == here.viewMarkupId) {
+          //this should be view after having set here.something
+          
+        } // end if it's view/html
+        //let textarea grow to larger than text size (via jquery mobile)
+        $('#Result_textarea').trigger('keyup')
+      }//end presenterUpdateFrom
+    });//end create presenter
+    
   }
   return {
     go: go
@@ -1829,6 +2083,7 @@ window.simplifier = simplifier = (function createSimplifier() {
 var gOldOnError = window.onerror;
 // Override previous handler.
 window.onerror = function myErrorHandler(errorMsg, url, lineNumber) {
+  console.log('global error: ' + errorMsg + " \n url: " + url + " \n line: " + lineNumber)
   if (gOldOnError)
     // Call previous handler.
     return gOldOnError(errorMsg, url, lineNumber);

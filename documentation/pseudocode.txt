@@ -294,20 +294,21 @@ Create Item 2.5 Part of Speech
 //type object can keep a reference to the selected level(s)
 //hard words object can 
 
-// 2.6.1 Most of the items in this list shall be simple synonyms (words  or phrases) that can be replacements for the selected hard word or phrase, and each of these items shall have its associated level (and possibly locale and/or part of speech) listed with it. Priority: 2
-// 2.6.1.1 Whenever it is feasible, the Easier Word/Phrase items shall have the same inflection as the original word so that they can be automatically reinserted into the sentence in the place of the hard word or phrase. Priority: 3
-// 2.6.1.2 When the user selects a replacement word or phrase, the system shall use that to create or update a simplified draft text and thus update 2.7 Result. Priority: 3
-// 2.6.2 The system shall provide a place for the user to enter and submit an easier word as replacement for the hard word in focus (see 3.3). Priority: 1
-// 2.6.2.1 When the user submits a replacement word or phrase, the system shall use that to create or update a simplified draft text and thus update 2.7 Result. Priority: 1
-// 2.6.2.2 The system shall store the user-submitted word and offer it as an alternative replacement for other instances of the hard word in focus. Priority: 2
-// 2.6.3 Underneath or above the Easier Word/Phrase list, the GUI shall provide a "set as default" option, though not necessarily with those exact words. Priority: 3
-// 2.6.3.1 The "set as default" option shall be selected by default. Priority: 3
-// 2.6.3.2 If the "set as default" option is selected when a change is approved in 2.7, the system shall associate the selected Easier Word/Phrase with the selected Hard Word and update any Unchecked results accordingly. Priority: 3
-// 2.6.3.2.1 If an Easier Word/Phrase is set as default for a High-Risk Hard Word, the system shall recategorize that Hard Word and all associated instances as 
 
 Create Item 2.7 Result
 
-
+//make sure when replacement is made it is saved in hard word-sentence-replacement
+//when approve and default is clicked, move the whole hard word out of unchecked; if hard word is accepted, move all to ignored; 
+  //if approve and change and default, move to both preap and ign, but divide the sentences: 
+    //the one checked into simplified (or ignored if it's hard), the others preapproved
+  //but if approve and simple and not default, copy hard word into simplified and move sentence only.
+  //and if approve and noChange/hard and not default, copy hard word into ignored and move sentence only.
+//make sure approve is set according to what the selectedType is
+//if change, copy into outputSentences
+//turn tool 3.1 into accept: all changes, not unchecked, approved only, with last selected; if no unchecked, turn it into a congrats, same with preapproved
+//create 3.2
+//get rid of tool 1.1
+//create some kind of notice that if you leave it open it will remember your added vocab, if that's true, so you can load second chapter or whatever.
 
 
 Create Item 3.1
