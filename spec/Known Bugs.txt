@@ -27,3 +27,7 @@ The following notes indicate known bugs:
 This program is not going to highlight words that can be easy or hard depending on the sense.
 For example, the word "over" is in the easy list, but if you use it in the specialized Cricket sporting sense (e.g. "after fifteen overs"), it won't be easy to some readers.
 This program needs to highlight the focus word in the displayed sentence and display a sentence more than once when there are multiple instances of the same hard word in it. That way the user can choose a different replacement for each. Presently the user can only choose a single replacement to cover both, but can manually change one in 2.7.
+
+No way to retry ajax if internet starts working again, nor to detect that it's working.
+No way to save preferences if having to reload page to try for suggestions.
+

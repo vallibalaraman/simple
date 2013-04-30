@@ -63,10 +63,10 @@ onmessage = function (oEvent) {
         //if hard word not encountered yet, make a location for it
         if (!hardWords[div[0]]) {
           hardWords[div[0]] = {};
-          hardWords[div[0]].sentences = {}
+          hardWords[div[0]].sentenceInfo = {}
         }
         //add this sentence as one instance of this hard word
-        hardWords[div[0]].sentences[sentenceCount] = {textArrayIndex: currentSentence.length};
+        hardWords[div[0]].sentenceInfo[sentenceCount] = {textArrayIndex: currentSentence.length};
       }
     //console.log('length: ' + div.length + ', div[0]: *' + div[0] + '*, isFin: ' + isFinalizer + ', isSp: ' + isBeforeWord + ', div[1]: *' + div[1] + '*, isCap: ' + isCap + ', isEasy: ' + isEasy + ', div[2]: *' + div[2] + '*, div[3]: *' + div[3] + '*');
       //check if paragraph is over or sentence is long enough and there's still a ways to go; if so, save and start new sentence

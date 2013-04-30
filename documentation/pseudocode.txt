@@ -295,6 +295,54 @@ Create Item 2.5 Part of Speech
 //hard words object can 
 
 
+
+2.4
+DESIGNING INSTANCE/SENTENCE
+MODEL
+//if change from hard words tool
+  //save for presenter and observers to use
+PRESENTER
+//if any clicked
+  //record in model for replace etc. to use
+//if change in model sentences but not hardword+type
+  //tack them on
+//if change in model hardword+type
+  //delete old and create new, if any
+  //find new selected type and word, and use them to find new set of sentence ids in data
+  //for each sentence id, display the sentence
+  //if it's unapproved, use old sentence
+  //if it's approved, use new sentence if availab
+2.6
+DESIGNING REPLACEMENT:
+MODEL
+//on receving a sentence-batch of hard words if the hard word does not have suggestions saved 7 secs after trying
+  //ajaxing for suggestions
+//on receiving suggestions
+  //ordering suggestions esp by vocab size
+  //creating extra suggestions: 
+    //original word
+    //default (previous usage or approved similar)
+    //inflected suggestions
+    //user entered words?
+//on hard word change AND on sentence change AND on type change
+  //saving appropriate info for presenter (e.g. replacement for field)
+  //saving appropriate info for Results
+//on receiving no suggestions
+  // no network notice
+//on receiving empty suggestions
+  //saving state so presenter can put no help from db notice
+PRESENTER
+//on field change
+  //saving to model
+//on click
+  //saving to model
+//on check
+  //saving to model
+//on model suggestions/no suggestions/empty suggestions
+  //changing display list
+
+
+
 Create Item 2.7 Result
 
 //make sure when replacement is made it is saved in hard word-sentence-replacement

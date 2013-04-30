@@ -3,7 +3,7 @@ Note the role of quotation marks in defining some keys as string literals (one p
 Variable keys have no siblings in this document, and leaf node values are JavaScript primitives, and other node values are containers.
 This document was not done before all coding, but it was done before the sprint that coded most of this structure.
 
-level: object (max of 6 levels)
+level: object (max of 6 levels, but presently only one, called "1600")
   type: object (4 types)
     hardWord: object
       "definitions": object
