@@ -15,14 +15,27 @@ for (word in setOf1600) {
 
 
 onmessage = function (oEvent) {
-  //break up user text
-  //First, break at line breaks
+  //if single word or phrase, return quickly
+  if (oEvent.data.single) {
+    var entry = oEvent.data.single;
+    var bool = (setOf1600[entry] || 
+      setOf1600[entry.toLowerCase()] || 
+      stemmed1600[stemmer(entry)] || 
+      stemmed1600[stemmer(entry.toLowerCase())] ||
+      !isNaN(entry));
+    //use single and isEasy so main thread will know what to do with answer
+    postMessage({single: entry, isEasy: bool});
+    return;
+  }
+  //if significant text
+  //break up user text and evaluate word by word, sending messages along the way
   var text = '';
-  if (oEvent.text) {
+  if (oEvent.data.text) {
     text = oEvent.data.text;
   } else {
     text = oEvent.data;
   }
+  //First, break at line breaks
   var paragraphs = text.split('\n');
   var pText = '', div = [], sentenceLength = 0, currentSentence = [], isFinalizer = false, isFinalDot = false;
   var isBeforeWord = true, isCap = false, prevCap = false, isEasy = false, sentenceCount = 0, sentenceId, obj = {};
@@ -52,7 +65,10 @@ onmessage = function (oEvent) {
       //if the first letter is capitalized, it may be the beginning of a sentence
       isCap = /^[A-Z]/.test(div[0]);
       //check to see if it is in the easy-list
-      isEasy = (setOf1600[div[0]] || setOf1600[div[0].toLowerCase()] || stemmed1600[stemmer(div[0])]) ? true: false;
+      isEasy = (setOf1600[div[0]] || 
+        setOf1600[div[0].toLowerCase()] || 
+        stemmed1600[stemmer(div[0])] || 
+        stemmed1600[stemmer(div[0].toLowerCase())]) ? true: false;
       if (!isEasy) {
         //check if the "hard word" is really an irregular form of an easy word
         infinitive = irregVerbForms[div[0].toLowerCase()];
@@ -66,7 +82,10 @@ onmessage = function (oEvent) {
           hardWords[div[0]].sentenceInfo = {}
         }
         //add this sentence as one instance of this hard word
-        hardWords[div[0]].sentenceInfo[sentenceCount] = {textArrayIndex: currentSentence.length};
+        if (!hardWords[div[0]].sentenceInfo[sentenceCount]) {
+          hardWords[div[0]].sentenceInfo[sentenceCount] = {};
+        }
+        hardWords[div[0]].sentenceInfo[sentenceCount][currentSentence.length] = "unknownPoS";
       }
     //console.log('length: ' + div.length + ', div[0]: *' + div[0] + '*, isFin: ' + isFinalizer + ', isSp: ' + isBeforeWord + ', div[1]: *' + div[1] + '*, isCap: ' + isCap + ', isEasy: ' + isEasy + ', div[2]: *' + div[2] + '*, div[3]: *' + div[3] + '*');
       //check if paragraph is over or sentence is long enough and there's still a ways to go; if so, save and start new sentence
@@ -77,6 +96,8 @@ onmessage = function (oEvent) {
         currentSentence = [];
         sentenceLength = 0;
         hardWords = {};
+        //add a non word, to make all sentences like the first
+        currentSentence.push('');
       }
       //for every word, add to current sentence
       currentSentence.push(div[0]);
@@ -118,7 +139,7 @@ onmessage = function (oEvent) {
   }
   var finalObj = {status: 'finished'}
   postMessage(finalObj);
-  self.close();
+  //self.close();
 }//end onmessage function
 
 

@@ -1602,5 +1602,12 @@ var setOf1600 = {
 'metric ton': [{pos: 'n', def: '1000 kilograms'}],
 'tonne': [{pos: 'n', def: '1000 kilograms'}],
 'me': [{pos: 'pro', def: 'the person speaking'}],
+'our': [{pos: 'pro', def: 'belonging to the group of the person speaking'}],
+'my': [{pos: 'pro', def: 'belonging to the person speaking'}],
+'children': [{pos: 'n', def: 'more than one child'}],
 'them': [{pos: 'pro', def: 'the people being discussed'}],
+'him': [{pos: 'pro', def: 'the male person being discussed'}],
+'his': [{pos: 'pro', def: 'belonging to the male person being discussed'}],
+'her': [{pos: 'pro', def: 'the female person being discussed'}],
+'hers': [{pos: 'pro', def: 'belonging to the female person being discussed'}],
 'their': [{pos: 'ad', def: 'belonging to the people being discussed'}]}

@@ -3,26 +3,34 @@ Note the role of quotation marks in defining some keys as string literals (one p
 Variable keys have no siblings in this document, and leaf node values are JavaScript primitives, and other node values are containers.
 This document was not done before all coding, but it was done before the sprint that coded most of this structure.
 
-level: object (max of 6 levels, but presently only one, called "1600")
+"1600": object (max of 6 levels, but presently only one, called "1600")
   type: object (4 types)
     hardWord: object
       "definitions": object
         partOfSpeech: definition (string)
-      "defaults": object
-        partOfSpeech: suggestion (string)
       "sentenceInfo": object
-        sentenceId: object (sentenceId can be inputSentenceId or outputSentenceId)
-          [[textArrayIndex: object (this and contents can best be added in Analyzer if needed since a hard word may be found more than once in a sentence)]]
-            "replacement": suggestion (string)
-            "partOfSpeech": string
+        sentenceId: object (sentenceId is index in sentences[])
+          hardIndex: partOfSpeech (string) (was textArrayIndex = {"replacement": suggestion (string), "partOfSpeech": string)}
       "suggestions": object
         partOfSpeech: array
           number: object
             "suggestion": string
             "vocab": string
             "synset": number
+"sentences": array
+  number: object
+    "textArray": array
+      number: textFragment
+    "replace": object
+      index: replacement (string)     
+"defaults": object
+  hardWord: object
+    partOfSpeech: replacement (string)
+    "unknownPoS": replacement (string)
+    
+ OLD
 inputSentenceId: array (was object)
   number: array (was "textArray": array)
     number: string
-outputSentenceId: object/sparse Array
+outputSentenceId: array (sparse, better than object if I need to loop in order of number, but I guess I don't)
    number: string

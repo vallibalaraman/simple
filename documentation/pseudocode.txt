@@ -248,13 +248,14 @@ Create Item 2.1 Vocab Goal
 
 Create Item 2.2 Result Type"
 
- 2.2.1 The list shall have dividers labeled "Unchecked" and "Checked" or the equivalent. Priority: 1
- 2.2.1.1 Under "Unchecked", there shall be two items labeled "Low-Risk" and "High-Risk" or the equivalent. "Low-Risk" means results of data that fit into the expectations of the system. "High-Risk" means that something results of data that the system was not fully prepared for. Low-Risk is listed first to give the user a good impression of the results before focusing on the possibly embarrassing "High-Risk" results. Priority: 1
- 2.2.1.2 Under "Checked", there shall be two items labeled "Successes" and "Exceptions"
 
 
 Create Item 2.3 Hard Word
 
+//Worker analyzer.js sends a sentence's worth: its textArray, its number, and its hardWords with some of their info.
+//Some info, not all, because it is doing one sentence at a time, and a hard word may be in multiple sentences.
+//Therefore for each hardWord.sentenceInfo we must add the current sentence number as a key with its object of hardIndices and parts of speech
+//Later other keys (i.e. indices and sub-indices for other sentences) may be added to hardWord.sentenceInfo
 
 Create Item 2.4 Sentence
 
@@ -312,6 +313,28 @@ PRESENTER
   //for each sentence id, display the sentence
   //if it's unapproved, use old sentence
   //if it's approved, use new sentence if availab
+  
+This is awful
+I can't make sentence work, starting to panic, but can trust God
+what if in msg when I get hard word, just add it to data, notify instance to pick it up
+instance can find out selected hard word and type, look up sentenceIds in data, loop through sentences, and display them.
+  //this presenter was notified because of some change in model
+  //clear display of previous results
+  //get selected type
+  //get selected hard word
+  //find sentence ids for hard word in type
+  //find text array indices for each sentence
+  //find sentence text arrays for ids
+  //loop through sentences
+  //for each sentence, loop based on text array indices
+  //within each sentence, loop through words
+  //apply default changes to each word
+  //apply replacements particular to this instance
+  //add ** around the hard word in focus
+  //join sentence
+  //display sentence
+  
+  
 2.6
 DESIGNING REPLACEMENT:
 MODEL
@@ -358,6 +381,35 @@ Create Item 2.7 Result
 //get rid of tool 1.1
 //create some kind of notice that if you leave it open it will remember your added vocab, if that's true, so you can load second chapter or whatever.
 
+
+What happens when user approves a sentence?
+//goes into modified/output sentences
+//output is read, regardless of whether checking approved or unapproved, because in unapproved we want to see the unapproved word next to approved words.
+//when user unchecks approve sentence, it's deleted in modified. Probably modified should be an array of version arrays, and we push and pop versions as needed.
+//But let's not do that in input, because we want to 
+//All else fails, we could apply changes to a sentence and then see if it equals what user approved; if so, continue, but if not, freeze
+
+Let's try again
+//create a structure: data.sentences[] each = {textArray: [0: firstFrag...], replace: {index: replacement},
+//replace by index because default is by regEx and may make it hard to find replacement by regEx, and doing default last would cause other problems
+//if user clicks approve a manually modified sentence, everything after that builds on the manual. If he checks or unchecks, its only for that word.
+  //it's too complicated if you try to remember what modifications were made where, and whether the user wants to undo manual but not replacements, etc.
+//if user makes change in step 1, data.defaults remain, but data.sentences and type/hardwords is erased, together with dom.
+//what about direct changes to list? How is that different than defaults? Defaults are word-pos-replacement maps, eg: difficult-adj-hard; addition means difficult-adj-difficult.
+
+
+how does this work with reanalysis/rechecking?
+//when a user makes any change, whether manual or through the field, the whole sentence should go back to analyzer, 
+  //and any new hard words should be displayed, together with the sentence of course if it's in focus, 
+  //and any old hard words that are new to this sentence should have this sentence's index added to the hard word object/folder.
+  //and any old words that are not new to this sentence should have the new sentence displayed, rather than the old one, but remember old replacements.
+    //this means refreshing display (esp sentence) probably, and in sentence/instance tool, recreate sentence from lastest textArray then defaults then replacements
+    //if approved replacement is text itself, still include it in replacements, because it may override a default change.
+//if user checks or unchecks blank, ignore
+
+This almost makes me tempted to go ahead and highlight one word per sentence,
+Why not? I've already done it differently, so time. It would involve adding html tags, and add extra loop when looping for sentences
+Why do it? Will it make life more simple? Like if user chooses to accept existing word in one place but not another, I would need to readd the whole sentence and mark that whole sentence as replace[original]:original, which means there would be no effect if he unchecks it, in that case.
 
 Create Item 3.1
 
