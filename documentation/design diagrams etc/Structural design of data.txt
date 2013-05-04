@@ -2,12 +2,33 @@ STRUCTURAL DESIGN OF DATA
 Note the role of quotation marks in defining some keys as string literals (one per instance), as opposed to variables (may be many per instance).
 Variable keys have no siblings in this document, and leaf node values are JavaScript primitives, and other node values are containers.
 This document was not done before all coding, but it was done before the sprint that coded most of this structure.
+data = {}
+data.not1600 = {}
+data.not1600[type] = {}
+data.not1600[type][hardWord] = {}
+data.not1600[type][hardWord].sentenceInfo = {}
+data.not1600[type][hardWord].sentenceInfo[sentenceId] = {}
+data.not1600[type][hardWord].sentenceInfo[sentenceId][hardIndex] = partOfSpeech <string>
+data.not1600[type][hardWord].suggestions = {}
+data.not1600[type][hardWord].suggestions[partOfSpeech] = []
+data.not1600[type][hardWord].suggestions[partOfSpeech][i] = {} i is meaningless, just next in list as they come in
+data.not1600[type][hardWord].suggestions[partOfSpeech][i].suggestion = suggestion <string>
+data.not1600[type][hardWord].suggestions[partOfSpeech][i].vocab = 'hard'/'easy'/'yours'
+data.not1600[type][hardWord].suggestions[partOfSpeech][i].synset = responseIndex <number> in present api these are even numbers >1 that group synsets
+data.sentences = []
+data.sentences[sentenceId] = {}
+data.sentences[sentenceId].textArray = []
+data.sentences[sentenceId].textArray[fragIndex] == textFragment <string>
+data.sentences[sentenceId].replace = {}
+data.sentences[sentenceId].replace[hardIndex] = replacement <string>
+data.defaults = {}
+data.defaults[hardWord] = {}
+data.defaults[hardWord][partOfSpeech] = replacement <string>
+data.defaults[hardWord]["unknownPoS"] = replacement <string>
 
 "1600": object (max of 6 levels, but presently only one, called "1600")
-  type: object (4 types)
+  type: object (2-4 types)
     hardWord: object
-      "definitions": object
-        partOfSpeech: definition (string)
       "sentenceInfo": object
         sentenceId: object (sentenceId is index in sentences[])
           hardIndex: partOfSpeech (string) (was textArrayIndex = {"replacement": suggestion (string), "partOfSpeech": string)}
@@ -17,20 +38,13 @@ This document was not done before all coding, but it was done before the sprint 
             "suggestion": string
             "vocab": string
             "synset": number
-"sentences": array
-  number: object
-    "textArray": array
-      number: textFragment
-    "replace": object
-      index: replacement (string)     
+"sentences": array  
+  number: object  
+    "textArray": 
+      number: textFragment 
+    "replace": object 
+      index: replacement (string) 
 "defaults": object
   hardWord: object
     partOfSpeech: replacement (string)
     "unknownPoS": replacement (string)
-    
- OLD
-inputSentenceId: array (was object)
-  number: array (was "textArray": array)
-    number: string
-outputSentenceId: array (sparse, better than object if I need to loop in order of number, but I guess I don't)
-   number: string

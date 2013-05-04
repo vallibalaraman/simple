@@ -16,15 +16,28 @@ for (word in setOf1600) {
 
 onmessage = function (oEvent) {
   //if single word or phrase, return quickly
-  if (oEvent.data.single) {
-    var entry = oEvent.data.single;
-    var bool = (setOf1600[entry] || 
-      setOf1600[entry.toLowerCase()] || 
-      stemmed1600[stemmer(entry)] || 
-      stemmed1600[stemmer(entry.toLowerCase())] ||
-      !isNaN(entry));
-    //use single and isEasy so main thread will know what to do with answer
-    postMessage({single: entry, isEasy: bool});
+  if (oEvent.data.arr) {
+    var quickResponse = [];
+    for (var i in oEvent.data.arr) {
+      var query = oEvent.data.arr[i];
+      var entry = query.single;
+      var bool = (setOf1600[entry] || 
+        setOf1600[entry.toLowerCase()] || 
+        stemmed1600[stemmer(entry)] || 
+        stemmed1600[stemmer(entry.toLowerCase())] ||
+        !isNaN(entry)) ? true : false;
+      //use original properties and isEasy so main thread will know what to do with answer
+      var partialResponse = {};
+      partialResponse.single = query.single;
+      partialResponse.poS = query.poS;
+      partialResponse.originalWord = query.originalWord;
+      partialResponse.type = "Unapproved";
+      partialResponse.index = query.index;
+      partialResponse.isEasy = bool;
+      quickResponse.push(partialResponse);
+    }
+    postMessage({arr: quickResponse});
+    //don't go through the rest of the function
     return;
   }
   //if significant text

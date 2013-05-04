@@ -31,3 +31,8 @@ This program needs to highlight the focus word in the displayed sentence and dis
 No way to retry ajax if internet starts working again, nor to detect that it's working.
 No way to save preferences if having to reload page to try for suggestions.
 
+Sometimes when I click a lot of buttons I can make the selected hard word lose its blue rendering, but no apparent problems and it regains easily through more clicking.
+
+I found some hard words in the easy list: deplore, dissident, dictate, etc. Also some words I consider easy are not in there, like Hi, hello
+Then again, it suddently stopped finding hi as hard, and don't know why.
+I should modify analyze arr to check for poS, because some words are only easy in a certain part of speech.

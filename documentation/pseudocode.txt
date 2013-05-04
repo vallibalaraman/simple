@@ -314,9 +314,6 @@ PRESENTER
   //if it's unapproved, use old sentence
   //if it's approved, use new sentence if availab
   
-This is awful
-I can't make sentence work, starting to panic, but can trust God
-what if in msg when I get hard word, just add it to data, notify instance to pick it up
 instance can find out selected hard word and type, look up sentenceIds in data, loop through sentences, and display them.
   //this presenter was notified because of some change in model
   //clear display of previous results
@@ -337,8 +334,23 @@ instance can find out selected hard word and type, look up sentenceIds in data, 
   
 2.6
 DESIGNING REPLACEMENT:
+//repl tool sends ajax requests and in callback saves data and modifies tool (thus updating presenter)
+  //save to data.notIn1600["Unapproved"][queryWord].suggestions[partOfSpeech][i].suggestion
+    //also [i].vocab and [i].synset
+//repl tool is also notified for any change in selectedHardWord or selectedInstance or selectedPoS
+//when pub change, 
+  //if no pub.selectedHardWord, clear repl display; 
+  //else check for suggestions in order of priority using pub.st/shw/ssi/spos if they exist, and also check error messages
+    //save suggestions in array of objects like [{suggestion, poS, vocabLevel, optionalErrorMessage, isDefault, sentenceId, hardIndex (last two for later)}]
+//display suggestions and include first in field, with approve similar checked if isDefault, and any errorMessage at bottom.
+//if click, change field and notify model chain of selectedReplacement, including whole obj (so observer can save).
+//if manual change in field, on keyup, notify model chain (which will check for selectedReplacement).
+  //On keyup, check for isDefault (apSim checkbox status), and modify selectedReplacement.
+//In Approved (similarly to Unapproved), unchecking and checking apSim makes OTHER instances disappear and reappear but won't affect active one.
+
+
 MODEL
-//on receving a sentence-batch of hard words if the hard word does not have suggestions saved 7 secs after trying
+//on receving a sentence-batch of hard words if the hard word does not have suggestions saved few secs after trying
   //ajaxing for suggestions
 //on receiving suggestions
   //ordering suggestions esp by vocab size
@@ -416,6 +428,14 @@ Create Item 3.1
 
 Create Item 3.2
 
+Result tool needs to 
+//collect user's particular choice
+// and also defaults
+//collect sentence from data
+//replace the instance of hard word with user's choice
+//display modified sentence
+//if isDefault, save in defaults
+//also save particular choice.
 
 Create Item 1.1
 
