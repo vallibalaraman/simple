@@ -1,0 +1,70 @@
+<html>
+
+  <head>
+  
+	<!--
+		# index.html
+		#
+		# authored by Team 8 (Simpletons) for
+		# Roger West's class CSC 478 at UIS Spring 2013.
+		#
+		# this page serves as an example AJAX interface to the PHP+Py backend.
+		# it was mostly written for testing/debug purposes.
+		#
+		# (REQUIREMENT 2.6)
+	-->
+	
+  <script>
+
+  function getwords(str)
+  {
+
+    if (str.length==0)
+    {
+      document.getElementById("syns").innerHTML="";
+      return;
+    }
+
+    if (window.XMLHttpRequest)
+    { // IE7+, Firefox, Chrome, Opera, Safari
+      xmlhttp=new XMLHttpRequest();
+    }
+
+    else
+    { // IE6, IE5
+      xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+    }
+
+    xmlhttp.onreadystatechange=function()
+    {
+      if (xmlhttp.readyState==4 && xmlhttp.status==200)
+      {
+        document.getElementById("syns").innerHTML=xmlhttp.responseText;
+      }
+    }
+
+    xmlhttp.open("GET","getsyns.php?q="+str,true);
+    xmlhttp.send();
+  }
+
+  </script>
+  </head>
+
+<body>
+
+  <form onsubmit="getwords(this.word.value); return false;">
+
+    enter word:
+    <input type="text" name="word"> <input type="submit" value="Submit">
+
+  </form>
+
+  <p>
+
+    <pre><span id="syns"></span></pre>
+
+  </p>
+
+</body>
+
+</html>
